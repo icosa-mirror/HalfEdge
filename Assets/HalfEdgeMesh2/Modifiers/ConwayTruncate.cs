@@ -47,8 +47,14 @@ namespace HalfEdgeMesh2.Modifiers
 
                 do
                 {
-                    // Add the one vertex created for this half-edge
+                    // Add TWO vertices per edge: one from this half-edge, one from its twin
+                    // This creates the truncated corners
                     faceVerts.Add(heToVertex[he]);
+
+                    var twin = input.halfEdges[he].twin;
+                    if (twin != -1)
+                        faceVerts.Add(heToVertex[twin]);
+
                     he = input.halfEdges[he].next;
                 } while (he != startHe);
 
