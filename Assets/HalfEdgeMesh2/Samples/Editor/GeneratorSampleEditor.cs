@@ -76,6 +76,9 @@ namespace HalfEdgeMesh2.Editor
         SerializedProperty applyConwayGyro;
         SerializedProperty gyroSpinRatio;
 
+        SerializedProperty applyConwayTruncate;
+        SerializedProperty truncateRatio;
+
         SerializedProperty applyConwayZip;
         SerializedProperty zipRatio;
 
@@ -156,6 +159,9 @@ namespace HalfEdgeMesh2.Editor
 
             applyConwayGyro = serializedObject.FindProperty("applyConwayGyro");
             gyroSpinRatio = serializedObject.FindProperty("gyroSpinRatio");
+
+            applyConwayTruncate = serializedObject.FindProperty("applyConwayTruncate");
+            truncateRatio = serializedObject.FindProperty("truncateRatio");
 
             applyConwayZip = serializedObject.FindProperty("applyConwayZip");
             zipRatio = serializedObject.FindProperty("zipRatio");
@@ -336,6 +342,17 @@ namespace HalfEdgeMesh2.Editor
             {
                 EditorGUI.indentLevel++;
                 EditorGUILayout.PropertyField(gyroSpinRatio, new GUIContent("Spin Ratio", "How much to rotate faces (0-1)"));
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(5);
+
+            // Truncate operator
+            EditorGUILayout.PropertyField(applyConwayTruncate, new GUIContent("Apply Truncate", "Cuts off vertices"));
+            if (applyConwayTruncate.boolValue)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.PropertyField(truncateRatio, new GUIContent("Ratio", "How far along edges to cut (0.1-0.45)"));
                 EditorGUI.indentLevel--;
             }
 
