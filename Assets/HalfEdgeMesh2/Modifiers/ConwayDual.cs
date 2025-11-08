@@ -95,19 +95,22 @@ namespace HalfEdgeMesh2.Modifiers
                 if (vertexFaces.Length < 3)
                     continue;
 
-                // Create face from dual vertices
+                // Create face from dual vertices (reverse order for correct winding)
                 var faceStartHe = result.halfEdgeCount;
                 var newFace = new Face(faceStartHe);
                 var newFaceIdx = result.AddFace(newFace);
 
+                // Reverse the face order for correct outward-facing normals
                 for (var i = 0; i < vertexFaces.Length; i++)
                 {
-                    var dualVertexIdx = faceToVertex[vertexFaces[i]];
+                    // Walk backwards through the collected faces
+                    var reversedIdx = vertexFaces.Length - 1 - i;
+                    var dualVertexIdx = faceToVertex[vertexFaces[reversedIdx]];
                     var nextIdx = (i + 1) % vertexFaces.Length;
 
                     var newHe = new HalfEdge(
                         next: faceStartHe + nextIdx,
-                        twin: -1, // Will set later if needed
+                        twin: -1,
                         vertex: dualVertexIdx,
                         face: newFaceIdx
                     );
@@ -117,7 +120,8 @@ namespace HalfEdgeMesh2.Modifiers
                 // Update vertex half-edge references
                 for (var i = 0; i < vertexFaces.Length; i++)
                 {
-                    var dualVertexIdx = faceToVertex[vertexFaces[i]];
+                    var reversedIdx = vertexFaces.Length - 1 - i;
+                    var dualVertexIdx = faceToVertex[vertexFaces[reversedIdx]];
                     var heIdx = faceStartHe + i;
                     var v = result.vertices[dualVertexIdx];
                     if (v.halfEdge == -1)
