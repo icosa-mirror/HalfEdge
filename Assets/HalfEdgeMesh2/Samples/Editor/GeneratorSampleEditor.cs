@@ -76,6 +76,16 @@ namespace HalfEdgeMesh2.Editor
         SerializedProperty applyConwayGyro;
         SerializedProperty gyroSpinRatio;
 
+        SerializedProperty applyConwayZip;
+        SerializedProperty zipHeight;
+
+        SerializedProperty applyConwayExpand;
+
+        SerializedProperty applyConwayBevel;
+        SerializedProperty bevelRatio;
+
+        SerializedProperty applyConwayOrtho;
+
         void OnEnable()
         {
             generatorType = serializedObject.FindProperty("generatorType");
@@ -146,6 +156,16 @@ namespace HalfEdgeMesh2.Editor
 
             applyConwayGyro = serializedObject.FindProperty("applyConwayGyro");
             gyroSpinRatio = serializedObject.FindProperty("gyroSpinRatio");
+
+            applyConwayZip = serializedObject.FindProperty("applyConwayZip");
+            zipHeight = serializedObject.FindProperty("zipHeight");
+
+            applyConwayExpand = serializedObject.FindProperty("applyConwayExpand");
+
+            applyConwayBevel = serializedObject.FindProperty("applyConwayBevel");
+            bevelRatio = serializedObject.FindProperty("bevelRatio");
+
+            applyConwayOrtho = serializedObject.FindProperty("applyConwayOrtho");
         }
 
         public override void OnInspectorGUI()
@@ -318,6 +338,38 @@ namespace HalfEdgeMesh2.Editor
                 EditorGUILayout.PropertyField(gyroSpinRatio, new GUIContent("Spin Ratio", "How much to rotate faces (0-1)"));
                 EditorGUI.indentLevel--;
             }
+
+            EditorGUILayout.Space(5);
+
+            // Zip operator
+            EditorGUILayout.PropertyField(applyConwayZip, new GUIContent("Apply Zip", "Dual of Kis - creates pyramids at vertices"));
+            if (applyConwayZip.boolValue)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.PropertyField(zipHeight, new GUIContent("Height", "Height offset for raised vertices"));
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(5);
+
+            // Expand operator
+            EditorGUILayout.PropertyField(applyConwayExpand, new GUIContent("Apply Expand", "Moves faces apart and fills gaps"));
+
+            EditorGUILayout.Space(5);
+
+            // Bevel operator
+            EditorGUILayout.PropertyField(applyConwayBevel, new GUIContent("Apply Bevel", "Truncates edges creating rectangular faces"));
+            if (applyConwayBevel.boolValue)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.PropertyField(bevelRatio, new GUIContent("Ratio", "How far along edges to place vertices (0.1-0.4)"));
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(5);
+
+            // Ortho operator
+            EditorGUILayout.PropertyField(applyConwayOrtho, new GUIContent("Apply Ortho", "Creates all-quad mesh (medial)"));
 
             serializedObject.ApplyModifiedProperties();
         }

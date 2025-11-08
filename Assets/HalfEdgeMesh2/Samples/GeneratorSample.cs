@@ -96,6 +96,16 @@ namespace HalfEdgeMesh2.Samples
         [SerializeField] bool applyConwayGyro = false;
         [SerializeField] float gyroSpinRatio = 0.3f;
 
+        [SerializeField] bool applyConwayZip = false;
+        [SerializeField] float zipHeight = 0.3f;
+
+        [SerializeField] bool applyConwayExpand = false;
+
+        [SerializeField] bool applyConwayBevel = false;
+        [SerializeField] float bevelRatio = 0.2f;
+
+        [SerializeField] bool applyConwayOrtho = false;
+
         MeshFilter meshFilter;
 
         // Profiler markers
@@ -361,6 +371,42 @@ namespace HalfEdgeMesh2.Samples
                 needsDisposal = true;
             }
 
+            if (applyConwayZip)
+            {
+                var newMesh = ConwayZip.Apply(currentMesh, zipHeight, Allocator.Persistent);
+                if (needsDisposal)
+                    currentMesh.Dispose();
+                currentMesh = newMesh;
+                needsDisposal = true;
+            }
+
+            if (applyConwayExpand)
+            {
+                var newMesh = ConwayExpand.Apply(currentMesh, Allocator.Persistent);
+                if (needsDisposal)
+                    currentMesh.Dispose();
+                currentMesh = newMesh;
+                needsDisposal = true;
+            }
+
+            if (applyConwayBevel)
+            {
+                var newMesh = ConwayBevel.Apply(currentMesh, bevelRatio, Allocator.Persistent);
+                if (needsDisposal)
+                    currentMesh.Dispose();
+                currentMesh = newMesh;
+                needsDisposal = true;
+            }
+
+            if (applyConwayOrtho)
+            {
+                var newMesh = ConwayOrtho.Apply(currentMesh, Allocator.Persistent);
+                if (needsDisposal)
+                    currentMesh.Dispose();
+                currentMesh = newMesh;
+                needsDisposal = true;
+            }
+
             // Vertex-transform modifiers (in-place)
             // Apply expand modifier
             if (applyExpand)
@@ -434,6 +480,8 @@ namespace HalfEdgeMesh2.Samples
             // Conway operator parameters
             kisHeight = math.max(kisHeight, 0.01f);
             gyroSpinRatio = math.clamp(gyroSpinRatio, 0f, 1f);
+            zipHeight = math.max(zipHeight, 0.01f);
+            bevelRatio = math.clamp(bevelRatio, 0.1f, 0.4f);
 
             // Schedule mesh update for next Update
             needsMeshUpdate = true;
