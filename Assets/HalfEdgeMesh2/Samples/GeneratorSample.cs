@@ -70,6 +70,20 @@ namespace HalfEdgeMesh2.Samples
         [SerializeField] float smoothingFactor = 0.5f;
         [SerializeField] int smoothingIterations = 1;
 
+        [SerializeField] bool applyExpand = false;
+        [SerializeField] float expandDistance = 0.1f;
+
+        [SerializeField] bool applyStretch = false;
+        [SerializeField] float3 stretchScale = new float3(1, 1, 1);
+
+        [SerializeField] bool applyTwist = false;
+        [SerializeField] float twistAngle = 0.5f;
+        [SerializeField] float3 twistAxis = new float3(0, 1, 0);
+
+        [SerializeField] bool applySkew = false;
+        [SerializeField] float skewAngle = 0.3f;
+        [SerializeField] float3 skewDirection = new float3(1, 0, 0);
+
 
         MeshFilter meshFilter;
 
@@ -298,6 +312,30 @@ namespace HalfEdgeMesh2.Samples
         {
             var currentMesh = inputMesh;
 
+            // Apply expand modifier
+            if (applyExpand)
+            {
+                ExpandVertices.Apply(currentMesh, expandDistance);
+            }
+
+            // Apply stretch modifier
+            if (applyStretch)
+            {
+                StretchMesh.Apply(currentMesh, stretchScale);
+            }
+
+            // Apply twist modifier
+            if (applyTwist)
+            {
+                TwistMesh.Apply(currentMesh, twistAxis, float3.zero, twistAngle);
+            }
+
+            // Apply skew modifier
+            if (applySkew)
+            {
+                SkewMesh.Apply(currentMesh, skewAngle, skewDirection);
+            }
+
             // Apply smoothing modifier
             if (applySmooth && smoothingFactor > 0 && smoothingIterations > 0)
             {
@@ -338,6 +376,10 @@ namespace HalfEdgeMesh2.Samples
 
             smoothingFactor = math.clamp(smoothingFactor, 0f, 1f);
             smoothingIterations = math.max(smoothingIterations, 1);
+
+            stretchScale = math.max(stretchScale, 0.01f);
+            twistAxis = math.normalize(twistAxis);
+            skewDirection = math.normalize(skewDirection);
 
             // Schedule mesh update for next Update
             needsMeshUpdate = true;
