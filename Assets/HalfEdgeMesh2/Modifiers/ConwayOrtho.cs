@@ -72,30 +72,40 @@ namespace HalfEdgeMesh2.Modifiers
                 faceToVertex[faceIdx] = result.AddVertex(centerVertex);
             }
 
-            // Create quad faces: for each half-edge, create a quad from:
-            // edge midpoint -> face center -> next edge midpoint -> adjacent face center
+            // Create quad faces: for each half-edge, create a quad
+            // The quad connects the edge midpoint, this face's center,
+            // the previous edge's midpoint, and the twin face's center
             for (var heIdx = 0; heIdx < input.halfEdgeCount; heIdx++)
             {
                 var halfEdge = input.halfEdges[heIdx];
                 if (halfEdge.face == -1)
                     continue;
 
+                // Get previous half-edge in this face to find previous edge midpoint
+                var prevHe = heIdx;
+                var currentHe = input.halfEdges[prevHe].next;
+                while (currentHe != heIdx)
+                {
+                    prevHe = currentHe;
+                    currentHe = input.halfEdges[currentHe].next;
+                }
+
                 var twinIdx = halfEdge.twin;
                 if (twinIdx == -1)
-                    continue; // Skip boundary edges
+                    continue;
 
                 var twin = input.halfEdges[twinIdx];
                 if (twin.face == -1)
                     continue;
 
-                // Only create each face once
-                if (heIdx > twinIdx)
-                    continue;
-
-                // Quad: edge midpoint -> face1 center -> next edge midpoint -> face2 center
+                // Quad vertices:
+                // v0: midpoint of this edge
+                // v1: center of this face
+                // v2: midpoint of previous edge (in this face)
+                // v3: center of twin's face
                 var v0 = edgeToVertex[heIdx];
                 var v1 = faceToVertex[halfEdge.face];
-                var v2 = edgeToVertex[halfEdge.next];
+                var v2 = edgeToVertex[prevHe];
                 var v3 = faceToVertex[twin.face];
 
                 var faceStartHe = result.halfEdgeCount;
