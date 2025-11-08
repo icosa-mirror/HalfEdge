@@ -28,14 +28,16 @@ namespace HalfEdgeMesh2.Generators
             for (var i = 0; i < profileCount; i++)
             {
                 var p = profile[i];
-                builder.AddVertex(new float3(p.x, 0, p.z));
+                var u = i / (float)profileCount;
+                builder.AddVertex(new float3(p.x, 0, p.z), new float2(u, 0));
             }
 
             // Add top vertices
             for (var i = 0; i < profileCount; i++)
             {
                 var p = profile[i];
-                builder.AddVertex(new float3(p.x, height, p.z));
+                var u = i / (float)profileCount;
+                builder.AddVertex(new float3(p.x, height, p.z), new float2(u, 1));
             }
 
             // Add side faces (quads connecting bottom and top)
@@ -89,14 +91,16 @@ namespace HalfEdgeMesh2.Generators
             for (var i = 0; i < profileCount; i++)
             {
                 var p = profile[i];
-                builder.AddVertex(new float3(p.x, 0, p.z));
+                var u = i / (float)profileCount;
+                builder.AddVertex(new float3(p.x, 0, p.z), new float2(u, 0));
             }
 
             // Add top vertices
             for (var i = 0; i < profileCount; i++)
             {
                 var p = profile[i];
-                builder.AddVertex(new float3(p.x, height, p.z));
+                var u = i / (float)profileCount;
+                builder.AddVertex(new float3(p.x, height, p.z), new float2(u, 1));
             }
 
             // Add side faces (quads connecting bottom and top)
