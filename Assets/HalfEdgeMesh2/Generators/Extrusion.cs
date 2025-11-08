@@ -1,4 +1,5 @@
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 namespace HalfEdgeMesh2.Generators
@@ -119,28 +120,26 @@ namespace HalfEdgeMesh2.Generators
             if (capped)
             {
                 // Bottom cap (reverse winding for outward normal)
-                using (var bottomIndices = new NativeArray<int>(profileCount, Allocator.Temp))
-                {
-                    for (var i = 0; i < profileCount; i++)
-                        bottomIndices[i] = profileCount - 1 - i;
+                var bottomIndices = new NativeArray<int>(profileCount, Allocator.Temp);
+                for (var i = 0; i < profileCount; i++)
+                    bottomIndices[i] = profileCount - 1 - i;
 
-                    unsafe
-                    {
-                        builder.AddFace(new System.ReadOnlySpan<int>(bottomIndices.GetUnsafeReadOnlyPtr(), profileCount));
-                    }
+                unsafe
+                {
+                    builder.AddFace(new System.ReadOnlySpan<int>(bottomIndices.GetUnsafeReadOnlyPtr(), profileCount));
                 }
+                bottomIndices.Dispose();
 
                 // Top cap (normal winding)
-                using (var topIndices = new NativeArray<int>(profileCount, Allocator.Temp))
-                {
-                    for (var i = 0; i < profileCount; i++)
-                        topIndices[i] = profileCount + i;
+                var topIndices = new NativeArray<int>(profileCount, Allocator.Temp);
+                for (var i = 0; i < profileCount; i++)
+                    topIndices[i] = profileCount + i;
 
-                    unsafe
-                    {
-                        builder.AddFace(new System.ReadOnlySpan<int>(topIndices.GetUnsafeReadOnlyPtr(), profileCount));
-                    }
+                unsafe
+                {
+                    builder.AddFace(new System.ReadOnlySpan<int>(topIndices.GetUnsafeReadOnlyPtr(), profileCount));
                 }
+                topIndices.Dispose();
             }
 
             var result = builder.Build(allocator);
