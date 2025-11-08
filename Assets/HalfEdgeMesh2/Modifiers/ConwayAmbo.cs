@@ -126,13 +126,15 @@ namespace HalfEdgeMesh2.Modifiers
                 {
                     // This half-edge goes OUT from this vertex
                     // We want the edge midpoint for this outgoing edge
-                    vertexEdges.Add(he);
+                    if (!vertexEdges.Contains(he))
+                        vertexEdges.Add(he);
 
                     // Move to next half-edge around vertex (via twin and next)
                     var current = input.halfEdges[he];
                     if (current.twin != -1)
                     {
-                        he = input.halfEdges[current.twin].next;
+                        var twinHe = input.halfEdges[current.twin];
+                        he = twinHe.next;
                     }
                     else
                     {
@@ -140,7 +142,12 @@ namespace HalfEdgeMesh2.Modifiers
                     }
 
                     iterations++;
-                } while (he != startHe && iterations < 100);
+                    if (iterations >= 100)
+                    {
+                        // Safety check - prevent infinite loops
+                        break;
+                    }
+                } while (he != startHe);
 
                 if (vertexEdges.Length < 3)
                     continue;
