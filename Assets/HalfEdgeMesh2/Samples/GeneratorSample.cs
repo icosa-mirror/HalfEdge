@@ -15,16 +15,55 @@ namespace HalfEdgeMesh2.Samples
         public enum GeneratorType
         {
             Box,
-            Sphere
+            Sphere,
+            Cylinder,
+            Plane,
+            Cone,
+            Torus,
+            Tetrahedron,
+            Octahedron,
+            Dodecahedron,
+            Icosphere
         }
 
         [SerializeField] GeneratorType generatorType = GeneratorType.Box;
         [SerializeField] NormalGenerationMode normalMode = NormalGenerationMode.Smooth;
         [SerializeField] bool animateSize = false;
+
+        [Header("Box")]
         [SerializeField] float3 boxSize = new float3(2, 2, 2);
         [SerializeField] int3 boxSegments = new int3(2, 2, 2);
+
+        [Header("Sphere")]
         [SerializeField] float sphereRadius = 1.0f;
         [SerializeField] int2 sphereSegments = new int2(16, 12);
+
+        [Header("Cylinder")]
+        [SerializeField] float cylinderRadius = 0.5f;
+        [SerializeField] float cylinderHeight = 2.0f;
+        [SerializeField] int2 cylinderSegments = new int2(16, 1);
+        [SerializeField] bool cylinderCapped = true;
+
+        [Header("Plane")]
+        [SerializeField] float2 planeSize = new float2(2, 2);
+        [SerializeField] int2 planeSegments = new int2(4, 4);
+
+        [Header("Cone")]
+        [SerializeField] float coneRadius = 0.5f;
+        [SerializeField] float coneHeight = 2.0f;
+        [SerializeField] int coneSegments = 16;
+
+        [Header("Torus")]
+        [SerializeField] float torusMajorRadius = 1.0f;
+        [SerializeField] float torusMinorRadius = 0.3f;
+        [SerializeField] int2 torusSegments = new int2(24, 12);
+
+        [Header("Platonic Solids")]
+        [SerializeField] float platonicSize = 1.0f;
+
+        [Header("Icosphere")]
+        [SerializeField] float icosphereRadius = 1.0f;
+        [SerializeField] int icosphereSubdivisions = 2;
 
         [Header("Modifiers")]
         [SerializeField] bool applySmooth = false;
@@ -40,90 +79,29 @@ namespace HalfEdgeMesh2.Samples
         static readonly ProfilerMarker s_ModifierMarker = new ProfilerMarker("GeneratorSample.Modifier");
         static readonly ProfilerMarker s_UpdateUnityMeshMarker = new ProfilerMarker("GeneratorSample.UpdateUnityMesh");
         Mesh generatedMesh;
-        bool needsMeshInitialization;
-        GeneratorType lastGeneratorType;
-        NormalGenerationMode lastNormalMode;
-
-        // Box state
-        float3 lastBoxSize;
-        int3 lastBoxSegments;
-
-        // Sphere state
-        float lastSphereRadius;
-        int2 lastSphereSegments;
-
-        // Animation state
-        bool lastAnimateSize;
-
-        // Modifier state
-        bool lastApplySmooth;
-        float lastSmoothingFactor;
-        int lastSmoothingIterations;
+        bool needsMeshUpdate;
+        bool isAnimating;
 
         void Start()
         {
             meshFilter = GetComponent<MeshFilter>();
-
-            // Create managed mesh with DontSave flag
-            if (generatedMesh == null)
-            {
-                generatedMesh = new Mesh();
-                generatedMesh.name = "Generated Mesh";
-                generatedMesh.hideFlags = HideFlags.DontSave;
-            }
-
-            meshFilter.sharedMesh = generatedMesh;
-            UpdateState();
-            GenerateMesh();
+            InitializeMeshIfNeeded();
+            needsMeshUpdate = true;
+            isAnimating = false;
         }
 
         void Update()
         {
-            // Handle deferred mesh initialization
-            if (needsMeshInitialization)
-            {
-                InitializeMeshIfNeeded();
-                needsMeshInitialization = false;
-            }
-
-            bool needsUpdate = HasChanges();
-
-            // Only animate in play mode
+            // Check if we should animate (only in play mode)
             var shouldAnimate = animateSize && Application.isPlaying;
 
-            if (shouldAnimate || needsUpdate)
+            // Update mesh if needed or if animating
+            if (needsMeshUpdate || shouldAnimate)
             {
                 GenerateMesh();
-                UpdateState();
+                needsMeshUpdate = false;
+                isAnimating = shouldAnimate;
             }
-        }
-
-        bool HasChanges()
-        {
-            return generatorType != lastGeneratorType ||
-                   normalMode != lastNormalMode ||
-                   !boxSize.Equals(lastBoxSize) ||
-                   !boxSegments.Equals(lastBoxSegments) ||
-                   sphereRadius != lastSphereRadius ||
-                   !sphereSegments.Equals(lastSphereSegments) ||
-                   animateSize != lastAnimateSize ||
-                   applySmooth != lastApplySmooth ||
-                   smoothingFactor != lastSmoothingFactor ||
-                   smoothingIterations != lastSmoothingIterations;
-        }
-
-        void UpdateState()
-        {
-            lastGeneratorType = generatorType;
-            lastNormalMode = normalMode;
-            lastBoxSize = boxSize;
-            lastBoxSegments = boxSegments;
-            lastSphereRadius = sphereRadius;
-            lastSphereSegments = sphereSegments;
-            lastAnimateSize = animateSize;
-            lastApplySmooth = applySmooth;
-            lastSmoothingFactor = smoothingFactor;
-            lastSmoothingIterations = smoothingIterations;
         }
 
         void GenerateMesh()
@@ -142,6 +120,30 @@ namespace HalfEdgeMesh2.Samples
                             break;
                         case GeneratorType.Sphere:
                             meshData = GenerateSphere();
+                            break;
+                        case GeneratorType.Cylinder:
+                            meshData = GenerateCylinder();
+                            break;
+                        case GeneratorType.Plane:
+                            meshData = GeneratePlane();
+                            break;
+                        case GeneratorType.Cone:
+                            meshData = GenerateCone();
+                            break;
+                        case GeneratorType.Torus:
+                            meshData = GenerateTorus();
+                            break;
+                        case GeneratorType.Tetrahedron:
+                            meshData = Tetrahedron.Generate(platonicSize, Allocator.Persistent);
+                            break;
+                        case GeneratorType.Octahedron:
+                            meshData = Octahedron.Generate(platonicSize, Allocator.Persistent);
+                            break;
+                        case GeneratorType.Dodecahedron:
+                            meshData = Dodecahedron.Generate(platonicSize, Allocator.Persistent);
+                            break;
+                        case GeneratorType.Icosphere:
+                            meshData = GenerateIcosphere();
                             break;
                         default:
                             return;
@@ -207,6 +209,82 @@ namespace HalfEdgeMesh2.Samples
             return Sphere.Generate(currentRadius, currentSegments, Allocator.Persistent);
         }
 
+        MeshData GenerateCylinder()
+        {
+            var currentRadius = cylinderRadius;
+            var currentHeight = cylinderHeight;
+
+            if (animateSize && Application.isPlaying)
+            {
+                var t = Time.time;
+                var scale = math.lerp(0.9f, 1.0f, (math.sin(t) + 1.0f) * 0.5f);
+                currentRadius *= scale;
+                currentHeight *= scale;
+            }
+
+            return Cylinder.Generate(currentRadius, currentHeight, cylinderSegments, cylinderCapped, Allocator.Persistent);
+        }
+
+        MeshData GeneratePlane()
+        {
+            var currentSize = planeSize;
+
+            if (animateSize && Application.isPlaying)
+            {
+                var t = Time.time;
+                var scale = math.lerp(0.9f, 1.0f, (math.sin(t) + 1.0f) * 0.5f);
+                currentSize *= scale;
+            }
+
+            return Plane.Generate(currentSize, planeSegments, Allocator.Persistent);
+        }
+
+        MeshData GenerateCone()
+        {
+            var currentRadius = coneRadius;
+            var currentHeight = coneHeight;
+
+            if (animateSize && Application.isPlaying)
+            {
+                var t = Time.time;
+                var scale = math.lerp(0.9f, 1.0f, (math.sin(t) + 1.0f) * 0.5f);
+                currentRadius *= scale;
+                currentHeight *= scale;
+            }
+
+            return Cone.Generate(currentRadius, currentHeight, coneSegments, Allocator.Persistent);
+        }
+
+        MeshData GenerateTorus()
+        {
+            var currentMajorRadius = torusMajorRadius;
+            var currentMinorRadius = torusMinorRadius;
+
+            if (animateSize && Application.isPlaying)
+            {
+                var t = Time.time;
+                var scale = math.lerp(0.9f, 1.0f, (math.sin(t) + 1.0f) * 0.5f);
+                currentMajorRadius *= scale;
+                currentMinorRadius *= scale;
+            }
+
+            return Torus.Generate(currentMajorRadius, currentMinorRadius, torusSegments, Allocator.Persistent);
+        }
+
+        MeshData GenerateIcosphere()
+        {
+            var currentRadius = icosphereRadius;
+
+            if (animateSize && Application.isPlaying)
+            {
+                var t = Time.time;
+                var scale = math.lerp(0.9f, 1.0f, (math.sin(t) + 1.0f) * 0.5f);
+                currentRadius *= scale;
+            }
+
+            return Icosphere.Generate(currentRadius, icosphereSubdivisions, Allocator.Persistent);
+        }
+
         void OnDestroy()
         {
             if (generatedMesh != null)
@@ -233,14 +311,36 @@ namespace HalfEdgeMesh2.Samples
         {
             // Clamp values to valid ranges
             boxSegments = math.max(boxSegments, 1);
+            boxSize = math.max(boxSize, 0.01f);
+
             sphereSegments = math.max(sphereSegments, 3);
             sphereRadius = math.max(sphereRadius, 0.01f);
-            boxSize = math.max(boxSize, 0.01f);
+
+            cylinderSegments = math.max(cylinderSegments, new int2(3, 1));
+            cylinderRadius = math.max(cylinderRadius, 0.01f);
+            cylinderHeight = math.max(cylinderHeight, 0.01f);
+
+            planeSegments = math.max(planeSegments, 1);
+            planeSize = math.max(planeSize, 0.01f);
+
+            coneSegments = math.max(coneSegments, 3);
+            coneRadius = math.max(coneRadius, 0.01f);
+            coneHeight = math.max(coneHeight, 0.01f);
+
+            torusSegments = math.max(torusSegments, 3);
+            torusMajorRadius = math.max(torusMajorRadius, 0.01f);
+            torusMinorRadius = math.max(torusMinorRadius, 0.01f);
+
+            platonicSize = math.max(platonicSize, 0.01f);
+
+            icosphereRadius = math.max(icosphereRadius, 0.01f);
+            icosphereSubdivisions = math.clamp(icosphereSubdivisions, 0, 5);
+
             smoothingFactor = math.clamp(smoothingFactor, 0f, 1f);
             smoothingIterations = math.max(smoothingIterations, 1);
 
-            // Schedule mesh initialization for next Update
-            needsMeshInitialization = true;
+            // Schedule mesh update for next Update
+            needsMeshUpdate = true;
         }
 
         void InitializeMeshIfNeeded()
@@ -248,12 +348,14 @@ namespace HalfEdgeMesh2.Samples
             if (meshFilter == null)
                 meshFilter = GetComponent<MeshFilter>();
 
-            if (generatedMesh == null && meshFilter != null)
+            if (generatedMesh == null)
             {
                 generatedMesh = new Mesh();
                 generatedMesh.name = "Generated Mesh";
                 generatedMesh.hideFlags = HideFlags.DontSave;
-                meshFilter.sharedMesh = generatedMesh;
+
+                if (meshFilter != null)
+                    meshFilter.sharedMesh = generatedMesh;
             }
         }
     }
