@@ -370,8 +370,9 @@ mesh.Dispose();
 - UVGallerySample.cs
 - UV_TEST_GUIDE.md
 
-### Modified Files (2)
+### Modified Files (3)
 - GeneratorSample.cs (major enhancement)
+- GeneratorSampleEditor.cs (complete UI for all generators and modifiers)
 - HalfEdgeMesh2.unity (parameter updates)
 
 ## Git Commits
@@ -392,8 +393,9 @@ mesh.Dispose();
 14. Fix compilation errors in IndexedMesh and Extrusion (16 insertions, 16 deletions)
 15. Add UV test scene with procedural texture generation (578 insertions)
 16. Fix using variable compilation errors in test files (36 insertions, 36 deletions)
+17. Update GeneratorSampleEditor to show all generators and modifiers (181 insertions, 4 deletions)
 
-**Total additions**: ~4,600 lines of code
+**Total additions**: ~4,800 lines of code
 
 ## Design.md Completion Status
 
