@@ -64,11 +64,20 @@ namespace HalfEdgeMesh2.Modifiers
             {
                 vertexFaces.Clear();
 
-                var vertex = input.vertices[vertIdx];
-                if (vertex.halfEdge == -1)
-                    continue;
+                // Find all half-edges pointing to this vertex
+                var startHe = -1;
+                for (var heIdx = 0; heIdx < input.halfEdgeCount; heIdx++)
+                {
+                    if (input.halfEdges[heIdx].vertex == vertIdx)
+                    {
+                        startHe = heIdx;
+                        break;
+                    }
+                }
 
-                var startHe = vertex.halfEdge;
+                if (startHe == -1)
+                    continue; // No half-edges found for this vertex
+
                 var he = startHe;
                 var iterations = 0;
 
