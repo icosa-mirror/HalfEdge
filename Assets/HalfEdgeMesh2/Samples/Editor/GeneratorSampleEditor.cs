@@ -65,6 +65,17 @@ namespace HalfEdgeMesh2.Editor
         SerializedProperty skewAngle;
         SerializedProperty skewDirection;
 
+        // Conway operator properties
+        SerializedProperty applyConwayKis;
+        SerializedProperty kisHeight;
+
+        SerializedProperty applyConwayDual;
+
+        SerializedProperty applyConwayAmbo;
+
+        SerializedProperty applyConwayGyro;
+        SerializedProperty gyroSpinRatio;
+
         void OnEnable()
         {
             generatorType = serializedObject.FindProperty("generatorType");
@@ -124,6 +135,17 @@ namespace HalfEdgeMesh2.Editor
             applySkew = serializedObject.FindProperty("applySkew");
             skewAngle = serializedObject.FindProperty("skewAngle");
             skewDirection = serializedObject.FindProperty("skewDirection");
+
+            // Conway operators
+            applyConwayKis = serializedObject.FindProperty("applyConwayKis");
+            kisHeight = serializedObject.FindProperty("kisHeight");
+
+            applyConwayDual = serializedObject.FindProperty("applyConwayDual");
+
+            applyConwayAmbo = serializedObject.FindProperty("applyConwayAmbo");
+
+            applyConwayGyro = serializedObject.FindProperty("applyConwayGyro");
+            gyroSpinRatio = serializedObject.FindProperty("gyroSpinRatio");
         }
 
         public override void OnInspectorGUI()
@@ -258,6 +280,42 @@ namespace HalfEdgeMesh2.Editor
                 EditorGUI.indentLevel++;
                 EditorGUILayout.PropertyField(skewAngle);
                 EditorGUILayout.PropertyField(skewDirection);
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space();
+
+            // Conway Operators
+            EditorGUILayout.LabelField("Conway Operators", EditorStyles.boldLabel);
+            EditorGUILayout.HelpBox("Conway operators create new topology. They are applied first, before vertex modifiers.", MessageType.Info);
+
+            // Kis operator
+            EditorGUILayout.PropertyField(applyConwayKis, new GUIContent("Apply Kis", "Subdivides each face into triangles from a raised center point"));
+            if (applyConwayKis.boolValue)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.PropertyField(kisHeight, new GUIContent("Height", "Height offset for center vertices"));
+                EditorGUI.indentLevel--;
+            }
+
+            EditorGUILayout.Space(5);
+
+            // Dual operator
+            EditorGUILayout.PropertyField(applyConwayDual, new GUIContent("Apply Dual", "Swaps faces and vertices (face centroids become vertices)"));
+
+            EditorGUILayout.Space(5);
+
+            // Ambo operator
+            EditorGUILayout.PropertyField(applyConwayAmbo, new GUIContent("Apply Ambo", "Places vertices at edge midpoints"));
+
+            EditorGUILayout.Space(5);
+
+            // Gyro operator
+            EditorGUILayout.PropertyField(applyConwayGyro, new GUIContent("Apply Gyro", "Rotates and subdivides faces"));
+            if (applyConwayGyro.boolValue)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.PropertyField(gyroSpinRatio, new GUIContent("Spin Ratio", "How much to rotate faces (0-1)"));
                 EditorGUI.indentLevel--;
             }
 

@@ -85,6 +85,16 @@ namespace HalfEdgeMesh2.Samples
         [SerializeField] float skewAngle = 0.3f;
         [SerializeField] float3 skewDirection = new float3(1, 0, 0);
 
+        [Header("Conway Operators")]
+        [SerializeField] bool applyConwayKis = false;
+        [SerializeField] float kisHeight = 0.3f;
+
+        [SerializeField] bool applyConwayDual = false;
+
+        [SerializeField] bool applyConwayAmbo = false;
+
+        [SerializeField] bool applyConwayGyro = false;
+        [SerializeField] float gyroSpinRatio = 0.3f;
 
         MeshFilter meshFilter;
 
@@ -312,7 +322,46 @@ namespace HalfEdgeMesh2.Samples
         MeshData ApplyModifiers(MeshData inputMesh)
         {
             var currentMesh = inputMesh;
+            var needsDisposal = false;
 
+            // Conway operators (topology-changing) - must be applied first
+            if (applyConwayKis)
+            {
+                var newMesh = ConwayKis.Apply(currentMesh, kisHeight, Allocator.Persistent);
+                if (needsDisposal)
+                    currentMesh.Dispose();
+                currentMesh = newMesh;
+                needsDisposal = true;
+            }
+
+            if (applyConwayDual)
+            {
+                var newMesh = ConwayDual.Apply(currentMesh, Allocator.Persistent);
+                if (needsDisposal)
+                    currentMesh.Dispose();
+                currentMesh = newMesh;
+                needsDisposal = true;
+            }
+
+            if (applyConwayAmbo)
+            {
+                var newMesh = ConwayAmbo.Apply(currentMesh, Allocator.Persistent);
+                if (needsDisposal)
+                    currentMesh.Dispose();
+                currentMesh = newMesh;
+                needsDisposal = true;
+            }
+
+            if (applyConwayGyro)
+            {
+                var newMesh = ConwayGyro.Apply(currentMesh, gyroSpinRatio, Allocator.Persistent);
+                if (needsDisposal)
+                    currentMesh.Dispose();
+                currentMesh = newMesh;
+                needsDisposal = true;
+            }
+
+            // Vertex-transform modifiers (in-place)
             // Apply expand modifier
             if (applyExpand)
             {
@@ -381,6 +430,10 @@ namespace HalfEdgeMesh2.Samples
             stretchScale = math.max(stretchScale, 0.01f);
             twistAxis = math.normalize(twistAxis);
             skewDirection = math.normalize(skewDirection);
+
+            // Conway operator parameters
+            kisHeight = math.max(kisHeight, 0.01f);
+            gyroSpinRatio = math.clamp(gyroSpinRatio, 0f, 1f);
 
             // Schedule mesh update for next Update
             needsMeshUpdate = true;
