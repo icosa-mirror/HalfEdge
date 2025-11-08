@@ -12,10 +12,15 @@ namespace HalfEdgeMesh2.Generators
             // Regular tetrahedron vertices
             var s = size / math.sqrt(2f);
 
-            var v0 = builder.AddVertex(new float3( s,  s,  s));
-            var v1 = builder.AddVertex(new float3( s, -s, -s));
-            var v2 = builder.AddVertex(new float3(-s,  s, -s));
-            var v3 = builder.AddVertex(new float3(-s, -s,  s));
+            var p0 = new float3( s,  s,  s);
+            var p1 = new float3( s, -s, -s);
+            var p2 = new float3(-s,  s, -s);
+            var p3 = new float3(-s, -s,  s);
+
+            var v0 = builder.AddVertex(p0, CalculateSphericalUV(p0));
+            var v1 = builder.AddVertex(p1, CalculateSphericalUV(p1));
+            var v2 = builder.AddVertex(p2, CalculateSphericalUV(p2));
+            var v3 = builder.AddVertex(p3, CalculateSphericalUV(p3));
 
             // Tetrahedron faces
             builder.AddFace(v0, v1, v2);
@@ -27,6 +32,14 @@ namespace HalfEdgeMesh2.Generators
             builder.Dispose();
 
             return result;
+        }
+
+        static float2 CalculateSphericalUV(float3 position)
+        {
+            var normalized = math.normalize(position);
+            var u = 0.5f + math.atan2(normalized.z, normalized.x) / (2f * math.PI);
+            var v = 0.5f - math.asin(normalized.y) / math.PI;
+            return new float2(u, v);
         }
     }
 }

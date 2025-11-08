@@ -30,12 +30,14 @@ namespace HalfEdgeMesh2.Generators
                 var angle = s * angleStep;
                 var cos = math.cos(angle);
                 var sin = math.sin(angle);
+                var u = s / (float)segments;
 
                 for (var p = 0; p < profileCount; p++)
                 {
                     var profilePoint = profile[p];
                     var radius = profilePoint.x;
                     var height = profilePoint.y;
+                    var v = p / (float)(profileCount - 1);
 
                     var position = new float3(
                         radius * cos,
@@ -43,7 +45,8 @@ namespace HalfEdgeMesh2.Generators
                         radius * sin
                     );
 
-                    builder.AddVertex(position);
+                    var uv = new float2(u, v);
+                    builder.AddVertex(position, uv);
                 }
             }
 
@@ -89,12 +92,14 @@ namespace HalfEdgeMesh2.Generators
                 var angle = s * angleStep;
                 var cos = math.cos(angle);
                 var sin = math.sin(angle);
+                var u = s / (float)segments;
 
                 for (var p = 0; p < profileCount; p++)
                 {
                     var profilePoint = profile[p];
                     var radius = profilePoint.x;
                     var height = profilePoint.y;
+                    var v = p / (float)(profileCount - 1);
 
                     var position = new float3(
                         radius * cos,
@@ -102,7 +107,8 @@ namespace HalfEdgeMesh2.Generators
                         radius * sin
                     );
 
-                    builder.AddVertex(position);
+                    var uv = new float2(u, v);
+                    builder.AddVertex(position, uv);
                 }
             }
 

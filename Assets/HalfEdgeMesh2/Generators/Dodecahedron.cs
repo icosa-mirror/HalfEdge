@@ -17,33 +17,42 @@ namespace HalfEdgeMesh2.Generators
             // 20 vertices of a regular dodecahedron
             var vertices = new NativeArray<int>(20, Allocator.Temp);
 
+            // Helper to add vertex with spherical UV
+            int AddDodecaVertex(ref MeshBuilder b, float3 pos)
+            {
+                var normalized = math.normalize(pos);
+                var u = 0.5f + math.atan2(normalized.z, normalized.x) / (2f * math.PI);
+                var v = 0.5f - math.asin(normalized.y) / math.PI;
+                return b.AddVertex(pos, new float2(u, v));
+            }
+
             // Cube vertices (8 vertices)
-            vertices[0] = builder.AddVertex(new float3( 1,  1,  1) * scale);
-            vertices[1] = builder.AddVertex(new float3( 1,  1, -1) * scale);
-            vertices[2] = builder.AddVertex(new float3( 1, -1,  1) * scale);
-            vertices[3] = builder.AddVertex(new float3( 1, -1, -1) * scale);
-            vertices[4] = builder.AddVertex(new float3(-1,  1,  1) * scale);
-            vertices[5] = builder.AddVertex(new float3(-1,  1, -1) * scale);
-            vertices[6] = builder.AddVertex(new float3(-1, -1,  1) * scale);
-            vertices[7] = builder.AddVertex(new float3(-1, -1, -1) * scale);
+            vertices[0] = AddDodecaVertex(ref builder, new float3( 1,  1,  1) * scale);
+            vertices[1] = AddDodecaVertex(ref builder, new float3( 1,  1, -1) * scale);
+            vertices[2] = AddDodecaVertex(ref builder, new float3( 1, -1,  1) * scale);
+            vertices[3] = AddDodecaVertex(ref builder, new float3( 1, -1, -1) * scale);
+            vertices[4] = AddDodecaVertex(ref builder, new float3(-1,  1,  1) * scale);
+            vertices[5] = AddDodecaVertex(ref builder, new float3(-1,  1, -1) * scale);
+            vertices[6] = AddDodecaVertex(ref builder, new float3(-1, -1,  1) * scale);
+            vertices[7] = AddDodecaVertex(ref builder, new float3(-1, -1, -1) * scale);
 
             // Golden ratio rectangles in YZ plane (4 vertices)
-            vertices[8] = builder.AddVertex(new float3( 0,  phi,  invPhi) * scale);
-            vertices[9] = builder.AddVertex(new float3( 0,  phi, -invPhi) * scale);
-            vertices[10] = builder.AddVertex(new float3( 0, -phi,  invPhi) * scale);
-            vertices[11] = builder.AddVertex(new float3( 0, -phi, -invPhi) * scale);
+            vertices[8] = AddDodecaVertex(ref builder, new float3( 0,  phi,  invPhi) * scale);
+            vertices[9] = AddDodecaVertex(ref builder, new float3( 0,  phi, -invPhi) * scale);
+            vertices[10] = AddDodecaVertex(ref builder, new float3( 0, -phi,  invPhi) * scale);
+            vertices[11] = AddDodecaVertex(ref builder, new float3( 0, -phi, -invPhi) * scale);
 
             // Golden ratio rectangles in XZ plane (4 vertices)
-            vertices[12] = builder.AddVertex(new float3( invPhi,  0,  phi) * scale);
-            vertices[13] = builder.AddVertex(new float3(-invPhi,  0,  phi) * scale);
-            vertices[14] = builder.AddVertex(new float3( invPhi,  0, -phi) * scale);
-            vertices[15] = builder.AddVertex(new float3(-invPhi,  0, -phi) * scale);
+            vertices[12] = AddDodecaVertex(ref builder, new float3( invPhi,  0,  phi) * scale);
+            vertices[13] = AddDodecaVertex(ref builder, new float3(-invPhi,  0,  phi) * scale);
+            vertices[14] = AddDodecaVertex(ref builder, new float3( invPhi,  0, -phi) * scale);
+            vertices[15] = AddDodecaVertex(ref builder, new float3(-invPhi,  0, -phi) * scale);
 
             // Golden ratio rectangles in XY plane (4 vertices)
-            vertices[16] = builder.AddVertex(new float3( phi,  invPhi,  0) * scale);
-            vertices[17] = builder.AddVertex(new float3( phi, -invPhi,  0) * scale);
-            vertices[18] = builder.AddVertex(new float3(-phi,  invPhi,  0) * scale);
-            vertices[19] = builder.AddVertex(new float3(-phi, -invPhi,  0) * scale);
+            vertices[16] = AddDodecaVertex(ref builder, new float3( phi,  invPhi,  0) * scale);
+            vertices[17] = AddDodecaVertex(ref builder, new float3( phi, -invPhi,  0) * scale);
+            vertices[18] = AddDodecaVertex(ref builder, new float3(-phi,  invPhi,  0) * scale);
+            vertices[19] = AddDodecaVertex(ref builder, new float3(-phi, -invPhi,  0) * scale);
 
             // 12 pentagonal faces
             unsafe
