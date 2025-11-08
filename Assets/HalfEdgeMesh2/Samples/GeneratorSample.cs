@@ -97,7 +97,7 @@ namespace HalfEdgeMesh2.Samples
         [SerializeField] float gyroSpinRatio = 0.3f;
 
         [SerializeField] bool applyConwayZip = false;
-        [SerializeField] float zipHeight = 0.3f;
+        [SerializeField] float zipRatio = 0.3f;
 
         [SerializeField] bool applyConwayExpand = false;
 
@@ -373,7 +373,7 @@ namespace HalfEdgeMesh2.Samples
 
             if (applyConwayZip)
             {
-                var newMesh = ConwayZip.Apply(currentMesh, zipHeight, Allocator.Persistent);
+                var newMesh = ConwayZip.Apply(currentMesh, zipRatio, Allocator.Persistent);
                 if (needsDisposal)
                     currentMesh.Dispose();
                 currentMesh = newMesh;
@@ -480,7 +480,7 @@ namespace HalfEdgeMesh2.Samples
             // Conway operator parameters
             kisHeight = math.max(kisHeight, 0.01f);
             gyroSpinRatio = math.clamp(gyroSpinRatio, 0f, 1f);
-            zipHeight = math.max(zipHeight, 0.01f);
+            zipRatio = math.clamp(zipRatio, 0.1f, 0.45f);
             bevelRatio = math.clamp(bevelRatio, 0.1f, 0.4f);
 
             // Schedule mesh update for next Update

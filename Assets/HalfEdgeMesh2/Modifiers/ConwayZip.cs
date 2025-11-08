@@ -3,14 +3,17 @@ using Unity.Mathematics;
 
 namespace HalfEdgeMesh2.Modifiers
 {
-    // Conway Zip operator: creates kite-shaped faces
-    // For now, simplified to use Kis as a placeholder
+    // Conway Zip operator: truncate then dual (td)
+    // Not an original Conway operator but commonly used
     public static class ConwayZip
     {
-        public static MeshData Apply(MeshData input, float height, Allocator allocator)
+        public static MeshData Apply(MeshData input, float ratio, Allocator allocator)
         {
-            // Use Kis as a simple working operator for now
-            return ConwayKis.Apply(input, height, allocator);
+            // zip = td (truncate then dual)
+            var truncated = ConwayTruncate.Apply(input, ratio, Allocator.Persistent);
+            var result = ConwayDual.Apply(truncated, allocator);
+            truncated.Dispose();
+            return result;
         }
     }
 }

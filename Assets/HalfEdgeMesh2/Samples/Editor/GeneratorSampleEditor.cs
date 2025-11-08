@@ -77,7 +77,7 @@ namespace HalfEdgeMesh2.Editor
         SerializedProperty gyroSpinRatio;
 
         SerializedProperty applyConwayZip;
-        SerializedProperty zipHeight;
+        SerializedProperty zipRatio;
 
         SerializedProperty applyConwayExpand;
 
@@ -158,7 +158,7 @@ namespace HalfEdgeMesh2.Editor
             gyroSpinRatio = serializedObject.FindProperty("gyroSpinRatio");
 
             applyConwayZip = serializedObject.FindProperty("applyConwayZip");
-            zipHeight = serializedObject.FindProperty("zipHeight");
+            zipRatio = serializedObject.FindProperty("zipRatio");
 
             applyConwayExpand = serializedObject.FindProperty("applyConwayExpand");
 
@@ -342,11 +342,11 @@ namespace HalfEdgeMesh2.Editor
             EditorGUILayout.Space(5);
 
             // Zip operator
-            EditorGUILayout.PropertyField(applyConwayZip, new GUIContent("Apply Zip", "Dual of Kis - creates pyramids at vertices"));
+            EditorGUILayout.PropertyField(applyConwayZip, new GUIContent("Apply Zip", "Truncate then Dual (td)"));
             if (applyConwayZip.boolValue)
             {
                 EditorGUI.indentLevel++;
-                EditorGUILayout.PropertyField(zipHeight, new GUIContent("Height", "Height offset for raised vertices"));
+                EditorGUILayout.PropertyField(zipRatio, new GUIContent("Ratio", "Truncation ratio (0.1-0.45)"));
                 EditorGUI.indentLevel--;
             }
 
