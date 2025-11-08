@@ -27,7 +27,9 @@ namespace HalfEdgeMesh2.Generators
             var vertexIndices = new NativeArray<int>(vertices.Length, Allocator.Temp);
             for (var i = 0; i < vertices.Length; i++)
             {
-                vertexIndices[i] = builder.AddVertex(vertices[i]);
+                var pos = vertices[i];
+                var uv = CalculateSphericalUV(pos, radius);
+                vertexIndices[i] = builder.AddVertex(pos, uv);
             }
 
             for (var i = 0; i < faces.Length; i++)
@@ -44,6 +46,14 @@ namespace HalfEdgeMesh2.Generators
             vertexIndices.Dispose();
 
             return result;
+        }
+
+        static float2 CalculateSphericalUV(float3 position, float radius)
+        {
+            var normalized = math.normalize(position);
+            var u = 0.5f + math.atan2(normalized.z, normalized.x) / (2f * math.PI);
+            var v = 0.5f - math.asin(normalized.y) / math.PI;
+            return new float2(u, v);
         }
 
         static void CreateIcosahedron(ref NativeList<float3> vertices, ref NativeList<int3> faces, float radius)

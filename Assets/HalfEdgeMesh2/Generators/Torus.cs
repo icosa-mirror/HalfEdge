@@ -51,18 +51,21 @@ namespace HalfEdgeMesh2.Generators
                 var majorAngle = i * math.PI * 2f / segments.x;
                 var majorCos = math.cos(majorAngle);
                 var majorSin = math.sin(majorAngle);
+                var u = i / (float)segments.x;
 
                 for (var j = 0; j < segments.y; j++)
                 {
                     var minorAngle = j * math.PI * 2f / segments.y;
                     var minorCos = math.cos(minorAngle);
                     var minorSin = math.sin(minorAngle);
+                    var v = j / (float)segments.y;
 
                     var x = (majorRadius + minorRadius * minorCos) * majorCos;
                     var y = (majorRadius + minorRadius * minorCos) * majorSin;
                     var z = minorRadius * minorSin;
 
-                    var vertexIndex = builder.AddVertex(new float3(x, y, z));
+                    var uv = new float2(u, v);
+                    var vertexIndex = builder.AddVertex(new float3(x, y, z), uv);
                     grid.SetVertex(i, j, vertexIndex);
                 }
             }
