@@ -173,7 +173,35 @@ Test coverage includes:
 - Parameter clamping
 - Mesh validity checks
 
-### Phase 6: Sample Scene Enhancement
+### Phase 6: UV Test Scene
+
+Created comprehensive UV testing tools to verify texture mapping:
+
+#### UVTextureGenerator.cs
+- Procedural texture generation for UV testing
+- **CreateCheckerboard**: Black and white checker pattern for distortion testing
+- **CreateUVGradient**: RGB gradient (R=U, G=V) for precise coordinate verification
+- **CreateColoredGrid**: Multi-color grid for visual appeal
+- No external texture assets required
+
+#### UVGallerySample.cs
+- Automated gallery showcasing all 10 generators
+- Real-time material and texture generation
+- Configurable layout (spacing, items per row)
+- Multiple texture types supported
+- Optional auto-rotation for dynamic viewing
+- Context menu commands for easy gallery creation/clearing
+
+#### UV_TEST_GUIDE.md
+- Complete documentation for UV testing workflow
+- Explains UV mapping strategy for each generator type
+- Troubleshooting guide for common issues
+- Code examples for custom UV testing
+- Performance notes and best practices
+
+**Usage**: Attach UVGallerySample to a GameObject, enter Play Mode or use "Create Gallery" context menu to instantly visualize UV mapping on all generators with procedural test textures.
+
+### Phase 7: Sample Scene Enhancement
 
 Updated `Assets/HalfEdgeMesh2/Samples/GeneratorSample.cs`:
 - Interactive UI for all 10 generators
@@ -306,7 +334,7 @@ mesh.Dispose();
 
 ## Files Created/Modified
 
-### New Files (27 total)
+### New Files (30 total)
 **Generators (11):**
 - Cylinder.cs
 - Plane.cs
@@ -336,6 +364,11 @@ mesh.Dispose();
 - LatheGeneratorTests.cs
 - ExtrusionGeneratorTests.cs
 - ExpandVerticesTests.cs
+
+**UV Test Scene (3):**
+- UVTextureGenerator.cs
+- UVGallerySample.cs
+- UV_TEST_GUIDE.md
 
 ### Modified Files (2)
 - GeneratorSample.cs (major enhancement)
@@ -391,10 +424,10 @@ The original HalfEdgeMesh uses reference-based structures that make these operat
 Beyond the Design.md specification, future work could include:
 
 1. **Advanced Features**
-   - UV coordinate generation
    - Vertex colors/attributes
    - Selection system
    - Mesh serialization
+   - UV2 support for lightmapping
 
 2. **Optimization**
    - Job-based generation
@@ -411,12 +444,15 @@ Beyond the Design.md specification, future work could include:
 HalfEdgeMesh2 is now a production-ready library with:
 - **Complete generator set** (13/13 generators from Design.md) ✅
 - **Full UV coordinate support** (all 13 generators with proper texture mapping) ✅
+- **UV test scene** (procedural texture tools and automated gallery) ✅
 - **Useful modifier toolkit** (5 vertex-transform modifiers)
 - **Solid test coverage** (98+ tests across 17 test files)
 - **Interactive demo scene** (10 generators with real-time parameter editing)
 - **Zero-GC, Burst-compatible architecture**
 
 All generators specified in Design.md have been successfully implemented, tested, and enhanced with UV coordinate support. The library provides both basic geometric primitives and advanced profile-based generators, suitable for a wide range of procedural mesh generation needs. UV mapping enables proper texture application across all generated meshes.
+
+The UV test scene provides instant visual verification of UV mapping quality across all generators using procedural checkerboard, gradient, and colored grid textures. No external assets required.
 
 The vertex-transform modifiers (SmoothVertices, ExpandVertices, StretchMesh, TwistMesh, SkewMesh) are complete and tested. Topology-changing modifiers (ExtrudeFaces, ChamferVertices/Edges, SplitFaces) have been deferred due to architectural complexity in the index-based Burst-compatible design.
 
@@ -425,4 +461,5 @@ This project demonstrates that AI-assisted development can successfully:
 - Implement comprehensive test coverage
 - Follow consistent design patterns
 - Add complex features like UV coordinate generation
+- Create complete testing and visualization tools
 - Produce production-ready, high-performance code
