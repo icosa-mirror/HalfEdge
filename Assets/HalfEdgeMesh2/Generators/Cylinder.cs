@@ -24,8 +24,9 @@ namespace HalfEdgeMesh2.Generators
             if (capped)
             {
                 var halfHeight = height * 0.5f;
-                var bottomCenter = builder.AddVertex(new float3(0, 0, -halfHeight));
-                var topCenter = builder.AddVertex(new float3(0, 0, halfHeight));
+                var capCenterUV = new float2(0.5f, 0.5f);
+                var bottomCenter = builder.AddVertex(new float3(0, 0, -halfHeight), capCenterUV);
+                var topCenter = builder.AddVertex(new float3(0, 0, halfHeight), capCenterUV);
 
                 CreateBottomCap(ref builder, vertexRings, radialSegments, bottomCenter);
                 CreateTopCap(ref builder, vertexRings, radialSegments, heightSegments, topCenter);
@@ -65,13 +66,17 @@ namespace HalfEdgeMesh2.Generators
             for (var h = 0; h <= heightSegments; h++)
             {
                 var z = -halfHeight + h * heightStep;
+                var v = h / (float)heightSegments;
+
                 for (var i = 0; i < radialSegments; i++)
                 {
                     var angle = i * angleStep;
                     var x = math.cos(angle) * radius;
                     var y = math.sin(angle) * radius;
+                    var u = i / (float)radialSegments;
 
-                    var vertexIndex = builder.AddVertex(new float3(x, y, z));
+                    var uv = new float2(u, v);
+                    var vertexIndex = builder.AddVertex(new float3(x, y, z), uv);
                     rings.SetVertex(h, i, vertexIndex);
                 }
             }

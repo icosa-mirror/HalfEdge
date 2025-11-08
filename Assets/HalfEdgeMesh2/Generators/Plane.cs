@@ -58,7 +58,13 @@ namespace HalfEdgeMesh2.Generators
                         y * heightStep - halfSize.y,
                         0
                     );
-                    var vertexIndex = builder.AddVertex(position);
+
+                    var uv = new float2(
+                        x / (float)segments.x,
+                        y / (float)segments.y
+                    );
+
+                    var vertexIndex = builder.AddVertex(position, uv);
                     grid.SetVertex(x, y, vertexIndex);
                 }
             }

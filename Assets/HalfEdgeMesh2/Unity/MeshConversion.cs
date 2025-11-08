@@ -15,6 +15,7 @@ namespace HalfEdgeMesh2.Unity
     {
         // Static buffers for memory reuse
         static NativeArray<Vector3> s_vertexBuffer;
+        static NativeArray<Vector2> s_uvBuffer;
         static NativeArray<int> s_triangleBuffer;
         static bool s_buffersInitialized;
         public static Mesh ToUnityMesh(ref MeshData meshData, NormalGenerationMode mode = NormalGenerationMode.Smooth)
@@ -41,15 +42,18 @@ namespace HalfEdgeMesh2.Unity
             var triangleCount = GetTriangleCount(ref meshData);
             EnsureBufferCapacity(meshData.vertexCount, triangleCount);
 
-            // Extract vertices into static buffer
+            // Extract vertices and UVs into static buffers
             ExtractVerticesSmooth(ref meshData, ref s_vertexBuffer);
+            ExtractUVsSmooth(ref meshData, ref s_uvBuffer);
             ExtractTrianglesSmooth(ref meshData, ref s_triangleBuffer);
 
             // Set mesh data using buffer slices
             var vertexSlice = s_vertexBuffer.GetSubArray(0, meshData.vertexCount);
+            var uvSlice = s_uvBuffer.GetSubArray(0, meshData.vertexCount);
             var triangleSlice = s_triangleBuffer.GetSubArray(0, triangleCount);
 
             mesh.SetVertices(vertexSlice);
+            mesh.SetUVs(0, uvSlice);
             mesh.SetIndices(triangleSlice, MeshTopology.Triangles, 0);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
@@ -61,6 +65,12 @@ namespace HalfEdgeMesh2.Unity
             {
                 if (s_buffersInitialized) s_vertexBuffer.Dispose();
                 s_vertexBuffer = new NativeArray<Vector3>(math.max(vertexCount, 64), Allocator.Persistent);
+            }
+
+            if (!s_buffersInitialized || s_uvBuffer.Length < vertexCount)
+            {
+                if (s_buffersInitialized) s_uvBuffer.Dispose();
+                s_uvBuffer = new NativeArray<Vector2>(math.max(vertexCount, 64), Allocator.Persistent);
             }
 
             if (!s_buffersInitialized || s_triangleBuffer.Length < triangleCount)
@@ -90,6 +100,13 @@ namespace HalfEdgeMesh2.Unity
         {
             for (var i = 0; i < meshData.vertexCount; i++)
                 buffer[i] = meshData.vertices[i].position;
+        }
+
+        [BurstCompile]
+        static void ExtractUVsSmooth(ref MeshData meshData, ref NativeArray<Vector2> buffer)
+        {
+            for (var i = 0; i < meshData.vertexCount; i++)
+                buffer[i] = meshData.vertices[i].uv;
         }
 
         [BurstCompile]
@@ -157,58 +174,72 @@ namespace HalfEdgeMesh2.Unity
 
             EnsureBufferCapacity(vertexCount, triangleCount);
 
-            // Extract vertices and normals for flat shading
-            ExtractVerticesFlat(ref meshData, ref s_vertexBuffer, out var actualVertexCount);
+            // Extract vertices, UVs for flat shading
+            ExtractVerticesFlat(ref meshData, ref s_vertexBuffer, ref s_uvBuffer, out var actualVertexCount);
             ExtractTrianglesFlat(triangleCount, ref s_triangleBuffer);
 
             // Set mesh data using buffer slices
             var vertexSlice = s_vertexBuffer.GetSubArray(0, actualVertexCount);
+            var uvSlice = s_uvBuffer.GetSubArray(0, actualVertexCount);
             var triangleSlice = s_triangleBuffer.GetSubArray(0, triangleCount);
 
             mesh.SetVertices(vertexSlice);
+            mesh.SetUVs(0, uvSlice);
             mesh.SetIndices(triangleSlice, MeshTopology.Triangles, 0);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
         }
 
         [BurstCompile]
-        static void ExtractVerticesFlat(ref MeshData meshData, ref NativeArray<Vector3> buffer, out int actualVertexCount)
+        static void ExtractVerticesFlat(ref MeshData meshData, ref NativeArray<Vector3> vertexBuffer, ref NativeArray<Vector2> uvBuffer, out int actualVertexCount)
         {
             var vertexIndex = 0;
 
             for (var faceIndex = 0; faceIndex < meshData.faceCount; faceIndex++)
             {
                 var face = meshData.faces[faceIndex];
-                ExtractFaceVerticesFlat(ref meshData, face.halfEdge, ref buffer, ref vertexIndex);
+                ExtractFaceVerticesFlat(ref meshData, face.halfEdge, ref vertexBuffer, ref uvBuffer, ref vertexIndex);
             }
 
             actualVertexCount = vertexIndex;
         }
 
         [BurstCompile]
-        static void ExtractFaceVerticesFlat(ref MeshData meshData, int startHalfEdge, ref NativeArray<Vector3> vertices, ref int vertexIndex)
+        static void ExtractFaceVerticesFlat(ref MeshData meshData, int startHalfEdge, ref NativeArray<Vector3> vertices, ref NativeArray<Vector2> uvs, ref int vertexIndex)
         {
             // Collect face vertices
             var faceVertexCount = CountFaceVertices(ref meshData, startHalfEdge);
             var faceVertices = new NativeArray<Vector3>(faceVertexCount, Allocator.TempJob);
+            var faceUVs = new NativeArray<Vector2>(faceVertexCount, Allocator.TempJob);
 
             var currentHe = startHalfEdge;
             for (var i = 0; i < faceVertexCount; i++)
             {
                 var he = meshData.halfEdges[currentHe];
-                faceVertices[i] = meshData.vertices[he.vertex].position;
+                var vertex = meshData.vertices[he.vertex];
+                faceVertices[i] = vertex.position;
+                faceUVs[i] = vertex.uv;
                 currentHe = he.next;
             }
 
             // Triangulate face with duplicated vertices for flat shading
             for (var i = 1; i < faceVertexCount - 1; i++)
             {
-                vertices[vertexIndex++] = faceVertices[0];
-                vertices[vertexIndex++] = faceVertices[i];
-                vertices[vertexIndex++] = faceVertices[i + 1];
+                vertices[vertexIndex] = faceVertices[0];
+                uvs[vertexIndex] = faceUVs[0];
+                vertexIndex++;
+
+                vertices[vertexIndex] = faceVertices[i];
+                uvs[vertexIndex] = faceUVs[i];
+                vertexIndex++;
+
+                vertices[vertexIndex] = faceVertices[i + 1];
+                uvs[vertexIndex] = faceUVs[i + 1];
+                vertexIndex++;
             }
 
             faceVertices.Dispose();
+            faceUVs.Dispose();
         }
 
         [BurstCompile]

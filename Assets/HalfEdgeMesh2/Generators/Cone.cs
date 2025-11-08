@@ -19,10 +19,12 @@ namespace HalfEdgeMesh2.Generators
             var halfHeight = height * 0.5f;
 
             // Add apex vertex
-            var apexIndex = builder.AddVertex(new float3(0, 0, halfHeight));
+            var apexUV = new float2(0.5f, 1.0f);
+            var apexIndex = builder.AddVertex(new float3(0, 0, halfHeight), apexUV);
 
             // Add base center vertex
-            var baseCenterIndex = builder.AddVertex(new float3(0, 0, -halfHeight));
+            var baseCenterUV = new float2(0.5f, 0.5f);
+            var baseCenterIndex = builder.AddVertex(new float3(0, 0, -halfHeight), baseCenterUV);
 
             // Add base rim vertices
             var rimIndices = new NativeArray<int>(clampedSegments, Allocator.Temp);
@@ -33,7 +35,9 @@ namespace HalfEdgeMesh2.Generators
                 var angle = i * angleStep;
                 var x = math.cos(angle) * radius;
                 var y = math.sin(angle) * radius;
-                rimIndices[i] = builder.AddVertex(new float3(x, y, -halfHeight));
+                var u = i / (float)clampedSegments;
+                var uv = new float2(u, 0);
+                rimIndices[i] = builder.AddVertex(new float3(x, y, -halfHeight), uv);
             }
 
             // Create side faces (triangles from apex to rim)

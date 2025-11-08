@@ -52,6 +52,13 @@ namespace HalfEdgeMesh2
             return index;
         }
 
+        public int AddVertex(float3 position, float2 uv)
+        {
+            var index = vertices.Length;
+            vertices.Add(new Vertex(position, uv));
+            return index;
+        }
+
         public unsafe int AddFace(int v0, int v1, int v2)
         {
             var faceIndex = faces.Length;

@@ -54,12 +54,25 @@ namespace HalfEdgeMesh2.Generators
             for (var y = 0; y <= segments.y; y++)
             for (var x = 0; x <= segments.x; x++)
             {
-                var position = new float3(
-                    math.lerp(-halfSize.x, halfSize.x, x / (float)segments.x),
-                    math.lerp(-halfSize.y, halfSize.y, y / (float)segments.y),
-                    math.lerp(-halfSize.z, halfSize.z, z / (float)segments.z)
+                var t = new float3(
+                    x / (float)segments.x,
+                    y / (float)segments.y,
+                    z / (float)segments.z
                 );
-                var vertexIndex = builder.AddVertex(position);
+
+                var position = new float3(
+                    math.lerp(-halfSize.x, halfSize.x, t.x),
+                    math.lerp(-halfSize.y, halfSize.y, t.y),
+                    math.lerp(-halfSize.z, halfSize.z, t.z)
+                );
+
+                // Use averaged UV based on grid position (simple approach for shared vertices)
+                var uv = new float2(
+                    (t.x + t.z) * 0.5f,
+                    (t.y + t.x) * 0.5f
+                );
+
+                var vertexIndex = builder.AddVertex(position, uv);
                 grid.SetVertex(x, y, z, vertexIndex);
             }
 

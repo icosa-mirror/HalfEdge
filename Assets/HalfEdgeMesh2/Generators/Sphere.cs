@@ -33,12 +33,14 @@ namespace HalfEdgeMesh2.Generators
                 var theta = lat * math.PI / latitudeSegments;
                 var sinTheta = math.sin(theta);
                 var cosTheta = math.cos(theta);
+                var v = lat / (float)latitudeSegments;
 
                 for (var lon = 0; lon <= longitudeSegments; lon++)
                 {
                     var phi = lon * 2 * math.PI / longitudeSegments;
                     var sinPhi = math.sin(phi);
                     var cosPhi = math.cos(phi);
+                    var u = lon / (float)longitudeSegments;
 
                     var position = new float3(
                         cosPhi * sinTheta,
@@ -46,7 +48,9 @@ namespace HalfEdgeMesh2.Generators
                         sinPhi * sinTheta
                     ) * radius;
 
-                    builder.AddVertex(position);
+                    var uv = new float2(u, v);
+
+                    builder.AddVertex(position, uv);
                 }
             }
         }
