@@ -124,12 +124,9 @@ namespace HalfEdgeMesh2.Modifiers
                 // Collect all half-edges around this vertex
                 do
                 {
-                    // The edge going OUT from this vertex
-                    var outEdge = he;
-                    var inEdge = input.halfEdges[outEdge].next;
-
-                    // We want the vertex at the midpoint of the INcoming edge
-                    vertexEdges.Add(inEdge);
+                    // This half-edge goes OUT from this vertex
+                    // We want the edge midpoint for this outgoing edge
+                    vertexEdges.Add(he);
 
                     // Move to next half-edge around vertex (via twin and next)
                     var current = input.halfEdges[he];
