@@ -64,48 +64,16 @@ namespace HalfEdgeMesh2.Modifiers
             {
                 vertexFaces.Clear();
 
-                // Find all half-edges pointing to this vertex
-                var startHe = -1;
+                // Collect ALL faces around this vertex by scanning all half-edges
                 for (var heIdx = 0; heIdx < input.halfEdgeCount; heIdx++)
                 {
-                    if (input.halfEdges[heIdx].vertex == vertIdx)
+                    var he = input.halfEdges[heIdx];
+                    if (he.vertex == vertIdx && he.face != -1)
                     {
-                        startHe = heIdx;
-                        break;
+                        if (!vertexFaces.Contains(he.face))
+                            vertexFaces.Add(he.face);
                     }
                 }
-
-                if (startHe == -1)
-                    continue; // No half-edges found for this vertex
-
-                var he = startHe;
-                var iterations = 0;
-
-                // Collect all faces around this vertex
-                do
-                {
-                    var halfEdge = input.halfEdges[he];
-                    if (halfEdge.face != -1 && !vertexFaces.Contains(halfEdge.face))
-                        vertexFaces.Add(halfEdge.face);
-
-                    // Move to next half-edge around vertex (via twin and next)
-                    if (halfEdge.twin != -1)
-                    {
-                        var twinHe = input.halfEdges[halfEdge.twin];
-                        he = twinHe.next;
-                    }
-                    else
-                    {
-                        break; // Boundary edge
-                    }
-
-                    iterations++;
-                    if (iterations >= 100)
-                    {
-                        // Safety check - prevent infinite loops
-                        break;
-                    }
-                } while (he != startHe);
 
                 if (vertexFaces.Length < 3)
                     continue;

@@ -113,50 +113,16 @@ namespace HalfEdgeMesh2.Modifiers
             {
                 vertexEdges.Clear();
 
-                // Find all half-edges pointing to this vertex
-                var startHe = -1;
+                // Collect ALL half-edges around this vertex by scanning
                 for (var heIdx = 0; heIdx < input.halfEdgeCount; heIdx++)
                 {
-                    if (input.halfEdges[heIdx].vertex == vertIdx)
+                    var he = input.halfEdges[heIdx];
+                    if (he.vertex == vertIdx)
                     {
-                        startHe = heIdx;
-                        break;
+                        if (!vertexEdges.Contains(heIdx))
+                            vertexEdges.Add(heIdx);
                     }
                 }
-
-                if (startHe == -1)
-                    continue; // No half-edges found for this vertex
-
-                var he = startHe;
-                var iterations = 0;
-
-                // Collect all half-edges around this vertex
-                do
-                {
-                    // This half-edge goes OUT from this vertex
-                    // We want the edge midpoint for this outgoing edge
-                    if (!vertexEdges.Contains(he))
-                        vertexEdges.Add(he);
-
-                    // Move to next half-edge around vertex (via twin and next)
-                    var current = input.halfEdges[he];
-                    if (current.twin != -1)
-                    {
-                        var twinHe = input.halfEdges[current.twin];
-                        he = twinHe.next;
-                    }
-                    else
-                    {
-                        break; // Boundary edge
-                    }
-
-                    iterations++;
-                    if (iterations >= 100)
-                    {
-                        // Safety check - prevent infinite loops
-                        break;
-                    }
-                } while (he != startHe);
 
                 if (vertexEdges.Length < 3)
                     continue;
