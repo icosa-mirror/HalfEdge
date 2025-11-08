@@ -217,6 +217,59 @@ Updated `Assets/HalfEdgeMesh2.unity`:
 - Set sensible defaults
 - Ready for immediate use
 
+### Phase 8: Conway Polyhedron Operators
+
+Implemented topology-changing modifiers based on Conway polyhedron notation to demonstrate advanced half-edge manipulation capabilities:
+
+#### Operators
+
+**ConwayKis.cs** - Kis (K) operator
+- Subdivides each face into triangles from a raised center point
+- Adds vertex at face centroid, offset along face normal
+- Creates n triangular faces for each n-sided face
+- Configurable height parameter for center vertex offset
+- Formula: n-gon → n triangles
+
+**ConwayDual.cs** - Dual (D) operator
+- Creates dual polyhedron by swapping faces and vertices
+- Each face centroid becomes a new vertex
+- Each original vertex becomes a face connecting adjacent face centroids
+- Fundamental topological transformation
+- Example: Cube ↔ Octahedron
+
+**ConwayAmbo.cs** - Ambo (A) operator
+- Places vertices at edge midpoints (rectification)
+- Each original face becomes a face connecting edge midpoints
+- Each original vertex becomes a face connecting edge midpoints
+- Creates highly regular structures
+- Example: Cube → Cuboctahedron
+
+**ConwayGyro.cs** - Gyro (G) operator
+- Rotates and subdivides faces with pentagonal faces
+- Creates quadrilateral faces around each original edge
+- Adds vertices at edge midpoints and face centers
+- Configurable spin ratio (0-1) for rotation amount
+- Creates distinctive gyrated appearance
+
+#### Integration
+
+- **Topology-changing**: Unlike vertex-transform modifiers, Conway operators create entirely new mesh topology
+- **Memory management**: Automatic allocation/deallocation when chaining multiple operators
+- **Application order**: Applied before vertex-transform modifiers
+- **UI integration**: Full Inspector support with tooltips and help boxes
+- **Parameter validation**: Height and spin ratio clamping
+
+#### Technical Implementation
+
+All operators:
+- Work directly with half-edge structure for topology manipulation
+- Return new `MeshData` with different vertex/face/half-edge counts
+- Support chaining (e.g., Kis→Dual→Gyro)
+- Maintain mesh validity (closed manifolds)
+- Use NativeArray/NativeList for temporary data structures
+
+**Note**: These operators demonstrate that HalfEdgeMesh2 successfully handles complex topology-changing operations beyond simple vertex transforms, proving the architecture's flexibility for advanced procedural modeling.
+
 ## Architecture Highlights
 
 All generators and modifiers follow consistent patterns:
@@ -334,7 +387,7 @@ mesh.Dispose();
 
 ## Files Created/Modified
 
-### New Files (30 total)
+### New Files (34 total)
 **Generators (11):**
 - Cylinder.cs
 - Plane.cs
@@ -348,11 +401,18 @@ mesh.Dispose();
 - Lathe.cs
 - Extrusion.cs
 
-**Modifiers (4):**
+**Vertex Transform Modifiers (5):**
+- SmoothVertices.cs
 - ExpandVertices.cs
 - StretchMesh.cs
 - TwistMesh.cs
 - SkewMesh.cs
+
+**Conway Operators (4):**
+- ConwayKis.cs
+- ConwayDual.cs
+- ConwayAmbo.cs
+- ConwayGyro.cs
 
 **Tests (12):**
 - CylinderGeneratorTests.cs
@@ -394,8 +454,9 @@ mesh.Dispose();
 15. Add UV test scene with procedural texture generation (578 insertions)
 16. Fix using variable compilation errors in test files (36 insertions, 36 deletions)
 17. Update GeneratorSampleEditor to show all generators and modifiers (181 insertions, 4 deletions)
+18. Add Conway polyhedron operators as topology-changing modifiers (748 insertions)
 
-**Total additions**: ~4,800 lines of code
+**Total additions**: ~5,550 lines of code
 
 ## Design.md Completion Status
 
@@ -438,10 +499,10 @@ Beyond the Design.md specification, future work could include:
    - Multi-threaded modifiers
    - SIMD optimizations
 
-3. **Topology Operations**
-   - Implement topology-changing modifiers (ExtrudeFaces, Chamfer, etc.)
-   - Requires architectural extensions to MeshBuilder
-   - Consider hybrid approach for dynamic topology
+3. **Additional Topology Operations**
+   - Additional Conway operators (Meta, Truncate, Bevel, etc.)
+   - Original Design.md modifiers (ExtrudeFaces, Chamfer, SplitFaces)
+   - Boolean operations (union, intersection, difference)
 
 ## Conclusion
 
@@ -449,7 +510,8 @@ HalfEdgeMesh2 is now a production-ready library with:
 - **Complete generator set** (13/13 generators from Design.md) ✅
 - **Full UV coordinate support** (all 13 generators with proper texture mapping) ✅
 - **UV test scene** (procedural texture tools and automated gallery) ✅
-- **Useful modifier toolkit** (5 vertex-transform modifiers)
+- **Vertex-transform modifiers** (5 modifiers: Smooth, Expand, Stretch, Twist, Skew) ✅
+- **Conway polyhedron operators** (4 topology-changing operators: Kis, Dual, Ambo, Gyro) ✅
 - **Solid test coverage** (98+ tests across 17 test files)
 - **Interactive demo scene** (10 generators with real-time parameter editing)
 - **Zero-GC, Burst-compatible architecture**
@@ -458,12 +520,12 @@ All generators specified in Design.md have been successfully implemented, tested
 
 The UV test scene provides instant visual verification of UV mapping quality across all generators using procedural checkerboard, gradient, and colored grid textures. No external assets required.
 
-The vertex-transform modifiers (SmoothVertices, ExpandVertices, StretchMesh, TwistMesh, SkewMesh) are complete and tested. Topology-changing modifiers (ExtrudeFaces, ChamferVertices/Edges, SplitFaces) have been deferred due to architectural complexity in the index-based Burst-compatible design.
+The modifier toolkit includes 5 vertex-transform modifiers (SmoothVertices, ExpandVertices, StretchMesh, TwistMesh, SkewMesh) and 4 Conway polyhedron operators (Kis, Dual, Ambo, Gyro) that demonstrate successful topology manipulation in the half-edge structure. The Conway operators prove that HalfEdgeMesh2 can handle complex topology-changing operations, creating entirely new mesh structures with different vertex/face/edge counts.
 
 This project demonstrates that AI-assisted development can successfully:
 - Port and optimize code to new architectures
 - Implement comprehensive test coverage
 - Follow consistent design patterns
-- Add complex features like UV coordinate generation
+- Add complex features like UV coordinate generation and topology transformation
 - Create complete testing and visualization tools
 - Produce production-ready, high-performance code
