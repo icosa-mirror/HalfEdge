@@ -5,6 +5,7 @@ using UnityEngine;
 using HalfEdgeMesh2.Generators;
 using HalfEdgeMesh2.Modifiers;
 using HalfEdgeMesh2.Unity;
+using PlaneGenerator = HalfEdgeMesh2.Generators.Plane;
 
 namespace HalfEdgeMesh2.Samples
 {
@@ -250,7 +251,7 @@ namespace HalfEdgeMesh2.Samples
                 currentSize *= scale;
             }
 
-            return Plane.Generate(currentSize, planeSegments, Allocator.Persistent);
+            return PlaneGenerator.Generate(currentSize, planeSegments, Allocator.Persistent);
         }
 
         MeshData GenerateCone()
