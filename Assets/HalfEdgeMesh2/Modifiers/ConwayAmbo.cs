@@ -145,14 +145,16 @@ namespace HalfEdgeMesh2.Modifiers
                 if (vertexEdges.Length < 3)
                     continue;
 
-                // Create face from edge midpoints
+                // Create face from edge midpoints (reverse order for correct winding)
                 var faceStartHe = result.halfEdgeCount;
                 var newFace = new Face(faceStartHe);
                 var newFaceIdx = result.AddFace(newFace);
 
+                // Reverse the edge order for correct outward-facing normals
                 for (var i = 0; i < vertexEdges.Length; i++)
                 {
-                    var edgeVertexIdx = heToVertex[vertexEdges[i]];
+                    var reversedIdx = vertexEdges.Length - 1 - i;
+                    var edgeVertexIdx = heToVertex[vertexEdges[reversedIdx]];
                     var nextIdx = (i + 1) % vertexEdges.Length;
 
                     var newHe = new HalfEdge(
@@ -167,7 +169,8 @@ namespace HalfEdgeMesh2.Modifiers
                 // Update vertex half-edge references
                 for (var i = 0; i < vertexEdges.Length; i++)
                 {
-                    var edgeVertexIdx = heToVertex[vertexEdges[i]];
+                    var reversedIdx = vertexEdges.Length - 1 - i;
+                    var edgeVertexIdx = heToVertex[vertexEdges[reversedIdx]];
                     var v = result.vertices[edgeVertexIdx];
                     if (v.halfEdge == -1)
                     {
