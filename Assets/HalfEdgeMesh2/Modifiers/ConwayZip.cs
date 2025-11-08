@@ -10,7 +10,7 @@ namespace HalfEdgeMesh2.Modifiers
         public static MeshData Apply(MeshData input, float height, Allocator allocator)
         {
             // Estimate sizes
-            var estimatedVertices = input.vertexCount + input.edgeCount; // Original + edge midpoints
+            var estimatedVertices = input.vertexCount + (input.halfEdgeCount / 2); // Original + edge midpoints
             var estimatedFaces = 0;
 
             // Count faces needed: each edge gets a triangular face
