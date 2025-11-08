@@ -113,33 +113,49 @@ namespace HalfEdgeMesh2.Modifiers
             {
                 vertexEdges.Clear();
 
-                // Collect ALL half-edges around this vertex by scanning
+                // Find a half-edge originating from this vertex
+                // Prefer interior edges (with twins) for complete traversal
+                var startHe = -1;
                 for (var heIdx = 0; heIdx < input.halfEdgeCount; heIdx++)
                 {
-                    var he = input.halfEdges[heIdx];
-                    if (he.vertex == vertIdx)
+                    if (input.halfEdges[heIdx].vertex == vertIdx)
                     {
-                        if (!vertexEdges.Contains(heIdx))
-                            vertexEdges.Add(heIdx);
-                    }
-                }
-
-                if (vertexEdges.Length < 3)
-                    continue;
-
-                // Sort edges by index to maintain circular order
-                for (var i = 0; i < vertexEdges.Length - 1; i++)
-                {
-                    for (var j = i + 1; j < vertexEdges.Length; j++)
-                    {
-                        if (vertexEdges[i] > vertexEdges[j])
+                        // Take first edge with a twin, or any edge if none found
+                        if (startHe == -1 || input.halfEdges[heIdx].twin != -1)
                         {
-                            var temp = vertexEdges[i];
-                            vertexEdges[i] = vertexEdges[j];
-                            vertexEdges[j] = temp;
+                            startHe = heIdx;
+                            if (input.halfEdges[heIdx].twin != -1)
+                                break; // Found interior edge, use it
                         }
                     }
                 }
+
+                if (startHe == -1)
+                    continue;
+
+                // Now traverse circularly around the vertex
+                var he = startHe;
+                var iterations = 0;
+                do
+                {
+                    vertexEdges.Add(he);
+
+                    // Move to next half-edge around vertex
+                    var current = input.halfEdges[he];
+                    if (current.twin != -1)
+                    {
+                        he = input.halfEdges[current.twin].next;
+                    }
+                    else
+                    {
+                        break; // Boundary edge
+                    }
+
+                    iterations++;
+                } while (he != startHe && iterations < 100);
+
+                if (vertexEdges.Length < 3)
+                    continue;
 
                 // Create face from edge midpoints (reverse order for correct winding)
                 var faceStartHe = result.halfEdgeCount;

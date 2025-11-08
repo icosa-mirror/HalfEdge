@@ -64,46 +64,50 @@ namespace HalfEdgeMesh2.Modifiers
             {
                 vertexFaces.Clear();
 
-                // Collect ALL faces around this vertex by scanning all half-edges
-                // Also track the half-edge index to preserve ordering
-                var faceToHalfEdge = new NativeArray<int>(input.faceCount, Allocator.Temp);
-                for (var i = 0; i < faceToHalfEdge.Length; i++)
-                    faceToHalfEdge[i] = -1;
-
+                // Find a half-edge originating from this vertex
+                // Prefer interior edges (with twins) for complete traversal
+                var startHe = -1;
                 for (var heIdx = 0; heIdx < input.halfEdgeCount; heIdx++)
                 {
-                    var he = input.halfEdges[heIdx];
-                    if (he.vertex == vertIdx && he.face != -1)
+                    if (input.halfEdges[heIdx].vertex == vertIdx)
                     {
-                        if (!vertexFaces.Contains(he.face))
+                        // Take first edge with a twin, or any edge if none found
+                        if (startHe == -1 || input.halfEdges[heIdx].twin != -1)
                         {
-                            vertexFaces.Add(he.face);
-                            faceToHalfEdge[he.face] = heIdx;
+                            startHe = heIdx;
+                            if (input.halfEdges[heIdx].twin != -1)
+                                break; // Found interior edge, use it
                         }
                     }
                 }
+
+                if (startHe == -1)
+                    continue;
+
+                // Now traverse circularly around the vertex
+                var he = startHe;
+                var iterations = 0;
+                do
+                {
+                    var halfEdge = input.halfEdges[he];
+                    if (halfEdge.face != -1)
+                        vertexFaces.Add(halfEdge.face);
+
+                    // Move to next half-edge around vertex
+                    if (halfEdge.twin != -1)
+                    {
+                        he = input.halfEdges[halfEdge.twin].next;
+                    }
+                    else
+                    {
+                        break; // Boundary edge
+                    }
+
+                    iterations++;
+                } while (he != startHe && iterations < 100);
 
                 if (vertexFaces.Length < 3)
-                {
-                    faceToHalfEdge.Dispose();
                     continue;
-                }
-
-                // Sort faces by their half-edge index to maintain circular order
-                for (var i = 0; i < vertexFaces.Length - 1; i++)
-                {
-                    for (var j = i + 1; j < vertexFaces.Length; j++)
-                    {
-                        if (faceToHalfEdge[vertexFaces[i]] > faceToHalfEdge[vertexFaces[j]])
-                        {
-                            var temp = vertexFaces[i];
-                            vertexFaces[i] = vertexFaces[j];
-                            vertexFaces[j] = temp;
-                        }
-                    }
-                }
-
-                faceToHalfEdge.Dispose();
 
                 // Create face from dual vertices (reverse order for correct winding)
                 var faceStartHe = result.halfEdgeCount;
