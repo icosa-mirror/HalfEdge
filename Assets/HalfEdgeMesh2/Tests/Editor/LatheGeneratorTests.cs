@@ -163,18 +163,17 @@ namespace HalfEdgeMesh2.Tests
         [Test]
         public void Generate_NativeArrayVersion_CreatesValidMesh()
         {
-            using (var profile = new NativeArray<float2>(2, Allocator.Temp))
-            {
-                profile[0] = new float2(0.5f, 0);
-                profile[1] = new float2(0.5f, 1);
+            var profile = new NativeArray<float2>(2, Allocator.Temp);
+            profile[0] = new float2(0.5f, 0);
+            profile[1] = new float2(0.5f, 1);
 
-                var mesh = Lathe.Generate(profile, 8, Allocator.Persistent);
+            var mesh = Lathe.Generate(profile, 8, Allocator.Persistent);
 
-                Assert.AreEqual(16, mesh.vertexCount);
-                Assert.AreEqual(8, mesh.faceCount);
+            Assert.AreEqual(16, mesh.vertexCount);
+            Assert.AreEqual(8, mesh.faceCount);
 
-                mesh.Dispose();
-            }
+            mesh.Dispose();
+            profile.Dispose();
         }
 
         [Test]

@@ -198,27 +198,29 @@ namespace HalfEdgeMesh2.Tests
         [Test]
         public void Generate_NativeArrayVersion_CreatesValidMesh()
         {
-            using (var vertices = new NativeArray<float3>(3, Allocator.Temp))
-            using (var faceIndices = new NativeArray<int>(3, Allocator.Temp))
-            using (var faceSizes = new NativeArray<int>(1, Allocator.Temp))
-            {
-                vertices[0] = new float3(0, 0, 0);
-                vertices[1] = new float3(1, 0, 0);
-                vertices[2] = new float3(0.5f, 1, 0);
+            var vertices = new NativeArray<float3>(3, Allocator.Temp);
+            var faceIndices = new NativeArray<int>(3, Allocator.Temp);
+            var faceSizes = new NativeArray<int>(1, Allocator.Temp);
 
-                faceIndices[0] = 0;
-                faceIndices[1] = 1;
-                faceIndices[2] = 2;
+            vertices[0] = new float3(0, 0, 0);
+            vertices[1] = new float3(1, 0, 0);
+            vertices[2] = new float3(0.5f, 1, 0);
 
-                faceSizes[0] = 3;
+            faceIndices[0] = 0;
+            faceIndices[1] = 1;
+            faceIndices[2] = 2;
 
-                var mesh = IndexedMesh.Generate(vertices, faceIndices, faceSizes, Allocator.Persistent);
+            faceSizes[0] = 3;
 
-                Assert.AreEqual(3, mesh.vertexCount);
-                Assert.AreEqual(1, mesh.faceCount);
+            var mesh = IndexedMesh.Generate(vertices, faceIndices, faceSizes, Allocator.Persistent);
 
-                mesh.Dispose();
-            }
+            Assert.AreEqual(3, mesh.vertexCount);
+            Assert.AreEqual(1, mesh.faceCount);
+
+            mesh.Dispose();
+            vertices.Dispose();
+            faceIndices.Dispose();
+            faceSizes.Dispose();
         }
 
         [Test]

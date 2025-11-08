@@ -199,20 +199,19 @@ namespace HalfEdgeMesh2.Tests
         [Test]
         public void Generate_NativeArrayVersion_CreatesValidMesh()
         {
-            using (var profile = new NativeArray<float3>(4, Allocator.Temp))
-            {
-                profile[0] = new float3(-0.5f, 0, -0.5f);
-                profile[1] = new float3(0.5f, 0, -0.5f);
-                profile[2] = new float3(0.5f, 0, 0.5f);
-                profile[3] = new float3(-0.5f, 0, 0.5f);
+            var profile = new NativeArray<float3>(4, Allocator.Temp);
+            profile[0] = new float3(-0.5f, 0, -0.5f);
+            profile[1] = new float3(0.5f, 0, -0.5f);
+            profile[2] = new float3(0.5f, 0, 0.5f);
+            profile[3] = new float3(-0.5f, 0, 0.5f);
 
-                var mesh = Extrusion.Generate(profile, 2.0f, true, Allocator.Persistent);
+            var mesh = Extrusion.Generate(profile, 2.0f, true, Allocator.Persistent);
 
-                Assert.AreEqual(8, mesh.vertexCount);
-                Assert.AreEqual(6, mesh.faceCount);
+            Assert.AreEqual(8, mesh.vertexCount);
+            Assert.AreEqual(6, mesh.faceCount);
 
-                mesh.Dispose();
-            }
+            mesh.Dispose();
+            profile.Dispose();
         }
 
         [Test]
