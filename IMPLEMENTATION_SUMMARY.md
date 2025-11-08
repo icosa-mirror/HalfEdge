@@ -390,8 +390,10 @@ mesh.Dispose();
 12. Complete UV generation for all remaining generators (75 insertions, 32 deletions)
 13. Add UV generation for Extrusion (8 insertions, 4 deletions)
 14. Fix compilation errors in IndexedMesh and Extrusion (16 insertions, 16 deletions)
+15. Add UV test scene with procedural texture generation (578 insertions)
+16. Fix using variable compilation errors in test files (36 insertions, 36 deletions)
 
-**Total additions**: ~4,000 lines of code
+**Total additions**: ~4,600 lines of code
 
 ## Design.md Completion Status
 
