@@ -106,56 +106,98 @@ namespace HalfEdgeMesh2.Modifiers
             }
 
             // Step 3: Create faces from original vertices
-            // Each original vertex becomes a face connecting edge midpoints of incident edges
+            // Collect all edges incident to each vertex by scanning all half-edges
             var vertexEdges = new NativeList<int>(Allocator.Temp);
+            var edgeMidpoints = new NativeArray<float3>(input.halfEdgeCount, Allocator.Temp);
+
+            // Pre-calculate edge midpoint positions for sorting
+            for (var i = 0; i < input.halfEdgeCount; i++)
+            {
+                var he = input.halfEdges[i];
+                var nextHe = input.halfEdges[he.next];
+                var v1Pos = input.vertices[he.vertex].position;
+                var v2Pos = input.vertices[nextHe.vertex].position;
+                edgeMidpoints[i] = (v1Pos + v2Pos) * 0.5f;
+            }
 
             for (var vertIdx = 0; vertIdx < input.vertexCount; vertIdx++)
             {
                 vertexEdges.Clear();
 
-                // Find a half-edge originating from this vertex
-                // Prefer interior edges (with twins) for complete traversal
-                var startHe = -1;
+                // Scan ALL half-edges to find ones originating from this vertex
                 for (var heIdx = 0; heIdx < input.halfEdgeCount; heIdx++)
                 {
                     if (input.halfEdges[heIdx].vertex == vertIdx)
                     {
-                        // Take first edge with a twin, or any edge if none found
-                        if (startHe == -1 || input.halfEdges[heIdx].twin != -1)
+                        // Check if we already have this edge (avoid duplicates from twins)
+                        var alreadyHave = false;
+                        for (var i = 0; i < vertexEdges.Length; i++)
                         {
-                            startHe = heIdx;
-                            if (input.halfEdges[heIdx].twin != -1)
-                                break; // Found interior edge, use it
+                            if (vertexEdges[i] == heIdx)
+                            {
+                                alreadyHave = true;
+                                break;
+                            }
                         }
+                        if (!alreadyHave)
+                            vertexEdges.Add(heIdx);
                     }
                 }
 
-                if (startHe == -1)
-                    continue;
-
-                // Now traverse circularly around the vertex
-                var he = startHe;
-                var iterations = 0;
-                do
-                {
-                    vertexEdges.Add(he);
-
-                    // Move to next half-edge around vertex
-                    var current = input.halfEdges[he];
-                    if (current.twin != -1)
-                    {
-                        he = input.halfEdges[current.twin].next;
-                    }
-                    else
-                    {
-                        break; // Boundary edge
-                    }
-
-                    iterations++;
-                } while (he != startHe && iterations < 100);
-
                 if (vertexEdges.Length < 3)
                     continue;
+
+                // Sort edges by angle around vertex
+                var vertexPos = input.vertices[vertIdx].position;
+
+                // Calculate average normal at vertex
+                var avgNormal = float3.zero;
+                for (var i = 0; i < vertexEdges.Length; i++)
+                {
+                    var he = vertexEdges[i];
+                    if (input.halfEdges[he].face != -1)
+                    {
+                        var face = input.faces[input.halfEdges[he].face];
+                        var he0 = face.halfEdge;
+                        var he1 = input.halfEdges[he0].next;
+                        var he2 = input.halfEdges[he1].next;
+
+                        var v0 = input.vertices[input.halfEdges[he0].vertex].position;
+                        var v1 = input.vertices[input.halfEdges[he1].vertex].position;
+                        var v2 = input.vertices[input.halfEdges[he2].vertex].position;
+
+                        var faceNormal = math.normalize(math.cross(v1 - v0, v2 - v0));
+                        avgNormal += faceNormal;
+                    }
+                }
+                avgNormal = math.normalize(avgNormal);
+
+                // Sort edges by angle
+                var sortedEdges = new NativeList<int>(vertexEdges.Length, Allocator.Temp);
+                for (var i = 0; i < vertexEdges.Length; i++)
+                    sortedEdges.Add(vertexEdges[i]);
+
+                var refDir = math.normalize(edgeMidpoints[sortedEdges[0]] - vertexPos);
+                var tangent = math.normalize(math.cross(avgNormal, refDir));
+
+                for (var i = 0; i < sortedEdges.Length - 1; i++)
+                {
+                    for (var j = i + 1; j < sortedEdges.Length; j++)
+                    {
+                        var dir_i = math.normalize(edgeMidpoints[sortedEdges[i]] - vertexPos);
+                        var dir_j = math.normalize(edgeMidpoints[sortedEdges[j]] - vertexPos);
+
+                        var angle_i = math.atan2(math.dot(tangent, dir_i), math.dot(refDir, dir_i));
+                        var angle_j = math.atan2(math.dot(tangent, dir_j), math.dot(refDir, dir_j));
+
+                        if (angle_i > angle_j)
+                        {
+                            var temp = sortedEdges[i];
+                            sortedEdges[i] = sortedEdges[j];
+                            sortedEdges[j] = temp;
+                        }
+                    }
+                }
 
                 // Create face from edge midpoints (reverse order for correct winding)
                 var faceStartHe = result.halfEdgeCount;
@@ -163,11 +205,11 @@ namespace HalfEdgeMesh2.Modifiers
                 var newFaceIdx = result.AddFace(newFace);
 
                 // Reverse the edge order for correct outward-facing normals
-                for (var i = 0; i < vertexEdges.Length; i++)
+                for (var i = 0; i < sortedEdges.Length; i++)
                 {
-                    var reversedIdx = vertexEdges.Length - 1 - i;
-                    var edgeVertexIdx = heToVertex[vertexEdges[reversedIdx]];
-                    var nextIdx = (i + 1) % vertexEdges.Length;
+                    var reversedIdx = sortedEdges.Length - 1 - i;
+                    var edgeVertexIdx = heToVertex[sortedEdges[reversedIdx]];
+                    var nextIdx = (i + 1) % sortedEdges.Length;
 
                     var newHe = new HalfEdge(
                         next: faceStartHe + nextIdx,
@@ -179,10 +221,10 @@ namespace HalfEdgeMesh2.Modifiers
                 }
 
                 // Update vertex half-edge references
-                for (var i = 0; i < vertexEdges.Length; i++)
+                for (var i = 0; i < sortedEdges.Length; i++)
                 {
-                    var reversedIdx = vertexEdges.Length - 1 - i;
-                    var edgeVertexIdx = heToVertex[vertexEdges[reversedIdx]];
+                    var reversedIdx = sortedEdges.Length - 1 - i;
+                    var edgeVertexIdx = heToVertex[sortedEdges[reversedIdx]];
                     var v = result.vertices[edgeVertexIdx];
                     if (v.halfEdge == -1)
                     {
@@ -190,7 +232,11 @@ namespace HalfEdgeMesh2.Modifiers
                         result.vertices[edgeVertexIdx] = v;
                     }
                 }
+
+                sortedEdges.Dispose();
             }
+
+            edgeMidpoints.Dispose();
 
             heToVertex.Dispose();
             vertexEdges.Dispose();
