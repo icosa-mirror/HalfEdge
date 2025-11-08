@@ -65,18 +65,45 @@ namespace HalfEdgeMesh2.Modifiers
                 vertexFaces.Clear();
 
                 // Collect ALL faces around this vertex by scanning all half-edges
+                // Also track the half-edge index to preserve ordering
+                var faceToHalfEdge = new NativeArray<int>(input.faceCount, Allocator.Temp);
+                for (var i = 0; i < faceToHalfEdge.Length; i++)
+                    faceToHalfEdge[i] = -1;
+
                 for (var heIdx = 0; heIdx < input.halfEdgeCount; heIdx++)
                 {
                     var he = input.halfEdges[heIdx];
                     if (he.vertex == vertIdx && he.face != -1)
                     {
                         if (!vertexFaces.Contains(he.face))
+                        {
                             vertexFaces.Add(he.face);
+                            faceToHalfEdge[he.face] = heIdx;
+                        }
                     }
                 }
 
                 if (vertexFaces.Length < 3)
+                {
+                    faceToHalfEdge.Dispose();
                     continue;
+                }
+
+                // Sort faces by their half-edge index to maintain circular order
+                for (var i = 0; i < vertexFaces.Length - 1; i++)
+                {
+                    for (var j = i + 1; j < vertexFaces.Length; j++)
+                    {
+                        if (faceToHalfEdge[vertexFaces[i]] > faceToHalfEdge[vertexFaces[j]])
+                        {
+                            var temp = vertexFaces[i];
+                            vertexFaces[i] = vertexFaces[j];
+                            vertexFaces[j] = temp;
+                        }
+                    }
+                }
+
+                faceToHalfEdge.Dispose();
 
                 // Create face from dual vertices (reverse order for correct winding)
                 var faceStartHe = result.halfEdgeCount;

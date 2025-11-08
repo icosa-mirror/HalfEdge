@@ -127,6 +127,20 @@ namespace HalfEdgeMesh2.Modifiers
                 if (vertexEdges.Length < 3)
                     continue;
 
+                // Sort edges by index to maintain circular order
+                for (var i = 0; i < vertexEdges.Length - 1; i++)
+                {
+                    for (var j = i + 1; j < vertexEdges.Length; j++)
+                    {
+                        if (vertexEdges[i] > vertexEdges[j])
+                        {
+                            var temp = vertexEdges[i];
+                            vertexEdges[i] = vertexEdges[j];
+                            vertexEdges[j] = temp;
+                        }
+                    }
+                }
+
                 // Create face from edge midpoints (reverse order for correct winding)
                 var faceStartHe = result.halfEdgeCount;
                 var newFace = new Face(faceStartHe);
