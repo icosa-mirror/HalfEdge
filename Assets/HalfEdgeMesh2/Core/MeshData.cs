@@ -112,24 +112,31 @@ namespace HalfEdgeMesh2
                 AddHalfEdge(newHe);
             }
 
-            // Validate: check if half-edges form a proper loop
-            // Each edge should go from one vertex to the next in the list
+            // Validate: check that half-edges don't conflict with existing edges
+            // Each half-edge from v0->v1 must not duplicate an existing v0->v1 edge
+            // (but v1->v0 is fine - that becomes a twin pair)
             for (var i = 0; i < vertexIndices.Length; i++)
             {
-                var heIdx = faceStartHe + i;
-                var he = halfEdges[heIdx];
-                var nextHe = halfEdges[he.next];
+                var v0 = reversed ? vertexIndices[vertexIndices.Length - 1 - i] : vertexIndices[i];
+                var v1 = reversed ? vertexIndices[vertexIndices.Length - 1 - ((i + 1) % vertexIndices.Length)] : vertexIndices[(i + 1) % vertexIndices.Length];
 
-                var vertIdx = reversed ? vertexIndices[vertexIndices.Length - 1 - i] : vertexIndices[i];
-                var nextVertIdx = reversed ? vertexIndices[vertexIndices.Length - 1 - ((i + 1) % vertexIndices.Length)] : vertexIndices[(i + 1) % vertexIndices.Length];
-
-                // Check: this half-edge starts at vertIdx and next half-edge starts at nextVertIdx
-                if (he.vertex != vertIdx || nextHe.vertex != nextVertIdx)
+                // Check all existing half-edges to see if any go from v0 to v1
+                for (var existingHeIdx = 0; existingHeIdx < savedHalfEdgeCount; existingHeIdx++)
                 {
-                    // Bad orientation - rollback
-                    halfEdgeCount = savedHalfEdgeCount;
-                    faceCount = savedFaceCount;
-                    return false;
+                    var existingHe = halfEdges[existingHeIdx];
+                    if (existingHe.next == -1)
+                        continue; // Invalid half-edge
+
+                    var existingNext = halfEdges[existingHe.next];
+
+                    // Check if existing edge goes v0->v1 (same direction as our new edge)
+                    if (existingHe.vertex == v0 && existingNext.vertex == v1)
+                    {
+                        // Bad orientation - already have an edge in this direction
+                        halfEdgeCount = savedHalfEdgeCount;
+                        faceCount = savedFaceCount;
+                        return false;
+                    }
                 }
             }
 
