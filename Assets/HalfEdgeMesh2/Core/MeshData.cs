@@ -95,6 +95,9 @@ namespace HalfEdgeMesh2
                 return false; // Not enough space for face
 
             var faceStartHe = halfEdgeCount;
+            var savedHalfEdgeCount = halfEdgeCount;
+            var savedFaceCount = faceCount;
+
             var newFaceIdx = AddFace(new Face(faceStartHe));
 
             for (var i = 0; i < vertexIndices.Length; i++)
@@ -107,8 +110,33 @@ namespace HalfEdgeMesh2
                     face: newFaceIdx
                 );
                 AddHalfEdge(newHe);
+            }
 
-                // Update vertex half-edge reference if not set
+            // Validate: check if half-edges form a proper loop
+            // Each edge should go from one vertex to the next in the list
+            for (var i = 0; i < vertexIndices.Length; i++)
+            {
+                var heIdx = faceStartHe + i;
+                var he = halfEdges[heIdx];
+                var nextHe = halfEdges[he.next];
+
+                var vertIdx = reversed ? vertexIndices[vertexIndices.Length - 1 - i] : vertexIndices[i];
+                var nextVertIdx = reversed ? vertexIndices[vertexIndices.Length - 1 - ((i + 1) % vertexIndices.Length)] : vertexIndices[(i + 1) % vertexIndices.Length];
+
+                // Check: this half-edge starts at vertIdx and next half-edge starts at nextVertIdx
+                if (he.vertex != vertIdx || nextHe.vertex != nextVertIdx)
+                {
+                    // Bad orientation - rollback
+                    halfEdgeCount = savedHalfEdgeCount;
+                    faceCount = savedFaceCount;
+                    return false;
+                }
+            }
+
+            // Update vertex half-edge references
+            for (var i = 0; i < vertexIndices.Length; i++)
+            {
+                var vertIdx = reversed ? vertexIndices[vertexIndices.Length - 1 - i] : vertexIndices[i];
                 var v = vertices[vertIdx];
                 if (v.halfEdge == -1)
                 {
