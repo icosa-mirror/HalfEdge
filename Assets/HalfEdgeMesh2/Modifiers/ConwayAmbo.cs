@@ -66,30 +66,7 @@ namespace HalfEdgeMesh2.Modifiers
                     he = input.halfEdges[he].next;
                 } while (he != startHe && vertices.Length < 100);
 
-                if (vertices.Length >= 3)
-                {
-                    var faceStartHe = result.halfEdgeCount;
-                    var newFaceIdx = result.AddFace(new Face(faceStartHe));
-
-                    for (var i = 0; i < vertices.Length; i++)
-                    {
-                        var newHe = new HalfEdge(
-                            next: faceStartHe + ((i + 1) % vertices.Length),
-                            twin: -1,
-                            vertex: vertices[i],
-                            face: newFaceIdx
-                        );
-                        result.AddHalfEdge(newHe);
-
-                        var v = result.vertices[vertices[i]];
-                        if (v.halfEdge == -1)
-                        {
-                            v.halfEdge = faceStartHe + i;
-                            result.vertices[vertices[i]] = v;
-                        }
-                    }
-                }
-
+                result.TryAddFaceFromVertices(vertices);
                 vertices.Dispose();
             }
 
@@ -128,32 +105,7 @@ namespace HalfEdgeMesh2.Modifiers
                         break; // Safety limit
                 } while (he != startHe);
 
-                if (vertices.Length >= 3)
-                {
-                    var faceStartHe = result.halfEdgeCount;
-                    var newFaceIdx = result.AddFace(new Face(faceStartHe));
-
-                    // Reverse order for correct winding
-                    for (var i = 0; i < vertices.Length; i++)
-                    {
-                        var reversedIdx = vertices.Length - 1 - i;
-                        var newHe = new HalfEdge(
-                            next: faceStartHe + ((i + 1) % vertices.Length),
-                            twin: -1,
-                            vertex: vertices[reversedIdx],
-                            face: newFaceIdx
-                        );
-                        result.AddHalfEdge(newHe);
-
-                        var v = result.vertices[vertices[reversedIdx]];
-                        if (v.halfEdge == -1)
-                        {
-                            v.halfEdge = faceStartHe + i;
-                            result.vertices[vertices[reversedIdx]] = v;
-                        }
-                    }
-                }
-
+                result.TryAddFaceFromVertices(vertices);
                 vertices.Dispose();
             }
 

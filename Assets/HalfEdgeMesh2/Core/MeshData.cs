@@ -69,6 +69,57 @@ namespace HalfEdgeMesh2
             return index;
         }
 
+        // Try to create a face from vertex list, reversing order if needed
+        public bool TryAddFaceFromVertices(NativeList<int> vertexIndices, bool tryReversed = true)
+        {
+            if (vertexIndices.Length < 3)
+                return false;
+
+            // Try normal order first
+            if (TryAddFaceFromVerticesInternal(vertexIndices, false))
+                return true;
+
+            // If that didn't work and we should try reversed, try reversed order
+            if (tryReversed && TryAddFaceFromVerticesInternal(vertexIndices, true))
+                return true;
+
+            return false;
+        }
+
+        bool TryAddFaceFromVerticesInternal(NativeList<int> vertexIndices, bool reversed)
+        {
+            if (halfEdgeCount + vertexIndices.Length > halfEdges.Length)
+                return false; // Not enough space for half-edges
+
+            if (faceCount >= faces.Length)
+                return false; // Not enough space for face
+
+            var faceStartHe = halfEdgeCount;
+            var newFaceIdx = AddFace(new Face(faceStartHe));
+
+            for (var i = 0; i < vertexIndices.Length; i++)
+            {
+                var vertIdx = reversed ? vertexIndices[vertexIndices.Length - 1 - i] : vertexIndices[i];
+                var newHe = new HalfEdge(
+                    next: faceStartHe + ((i + 1) % vertexIndices.Length),
+                    twin: -1,
+                    vertex: vertIdx,
+                    face: newFaceIdx
+                );
+                AddHalfEdge(newHe);
+
+                // Update vertex half-edge reference if not set
+                var v = vertices[vertIdx];
+                if (v.halfEdge == -1)
+                {
+                    v.halfEdge = faceStartHe + i;
+                    vertices[vertIdx] = v;
+                }
+            }
+
+            return true;
+        }
+
         public MeshData Compact(Allocator allocator)
         {
             var result = new MeshData
