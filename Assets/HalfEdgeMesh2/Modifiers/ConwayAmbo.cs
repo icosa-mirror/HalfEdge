@@ -22,7 +22,7 @@ namespace HalfEdgeMesh2.Modifiers
             // Ambo creates: vertices = edges, faces = old faces + old vertices
             var estimatedVertices = edgeCount;
             var estimatedFaces = input.faceCount + input.vertexCount;
-            var estimatedHalfEdges = estimatedFaces * 4; // Rough estimate
+            var estimatedHalfEdges = estimatedFaces * 4;
 
             var result = new MeshData(estimatedVertices, estimatedHalfEdges, estimatedFaces, allocator);
 
@@ -31,7 +31,7 @@ namespace HalfEdgeMesh2.Modifiers
             for (var i = 0; i < input.halfEdgeCount; i++)
                 heToVertex[i] = -1;
 
-            // Step 1: Create vertices at edge midpoints
+            // Create vertices at edge midpoints (twins share same vertex)
             for (var i = 0; i < input.halfEdgeCount; i++)
             {
                 if (heToVertex[i] != -1)
@@ -44,202 +44,120 @@ namespace HalfEdgeMesh2.Modifiers
                 var v2Pos = input.vertices[nextHe.vertex].position;
                 var midpoint = (v1Pos + v2Pos) * 0.5f;
 
-                var newVertex = new Vertex(midpoint, float2.zero);
-                var newVertexIdx = result.AddVertex(newVertex);
+                var newVertexIdx = result.AddVertex(new Vertex(midpoint, float2.zero));
 
-                // Map both this half-edge and its twin
+                // Map both this half-edge and its twin to the same vertex
                 heToVertex[i] = newVertexIdx;
                 if (he.twin != -1)
                     heToVertex[he.twin] = newVertexIdx;
             }
 
-            // Step 2: Create faces from original faces
-            // Each original face becomes a face connecting edge midpoints
+            // Faces to faces: each original face becomes a new face
             for (var faceIdx = 0; faceIdx < input.faceCount; faceIdx++)
             {
                 var face = input.faces[faceIdx];
                 var startHe = face.halfEdge;
                 var he = startHe;
-                var faceEdges = new NativeList<int>(Allocator.Temp);
+                var vertices = new NativeList<int>(Allocator.Temp);
 
-                // Collect half-edges around face
                 do
                 {
-                    faceEdges.Add(he);
+                    vertices.Add(heToVertex[he]);
                     he = input.halfEdges[he].next;
-                } while (he != startHe && faceEdges.Length < 100);
+                } while (he != startHe && vertices.Length < 100);
 
-                if (faceEdges.Length < 3)
+                if (vertices.Length >= 3)
                 {
-                    faceEdges.Dispose();
-                    continue;
-                }
+                    var faceStartHe = result.halfEdgeCount;
+                    var newFaceIdx = result.AddFace(new Face(faceStartHe));
 
-                // Create new face from edge midpoints
-                var faceStartHe = result.halfEdgeCount;
-                var newFace = new Face(faceStartHe);
-                var newFaceIdx = result.AddFace(newFace);
-
-                for (var i = 0; i < faceEdges.Length; i++)
-                {
-                    var edgeVertexIdx = heToVertex[faceEdges[i]];
-                    var nextIdx = (i + 1) % faceEdges.Length;
-
-                    var newHe = new HalfEdge(
-                        next: faceStartHe + nextIdx,
-                        twin: -1,
-                        vertex: edgeVertexIdx,
-                        face: newFaceIdx
-                    );
-                    result.AddHalfEdge(newHe);
-
-                    // Update vertex half-edge reference
-                    var v = result.vertices[edgeVertexIdx];
-                    if (v.halfEdge == -1)
+                    for (var i = 0; i < vertices.Length; i++)
                     {
-                        v.halfEdge = faceStartHe + i;
-                        result.vertices[edgeVertexIdx] = v;
+                        var newHe = new HalfEdge(
+                            next: faceStartHe + ((i + 1) % vertices.Length),
+                            twin: -1,
+                            vertex: vertices[i],
+                            face: newFaceIdx
+                        );
+                        result.AddHalfEdge(newHe);
+
+                        var v = result.vertices[vertices[i]];
+                        if (v.halfEdge == -1)
+                        {
+                            v.halfEdge = faceStartHe + i;
+                            result.vertices[vertices[i]] = v;
+                        }
                     }
                 }
 
-                faceEdges.Dispose();
+                vertices.Dispose();
             }
 
-            // Step 3: Create faces from original vertices
-            // Collect all edges incident to each vertex by scanning all half-edges
-            var vertexEdges = new NativeList<int>(Allocator.Temp);
-            var edgeMidpoints = new NativeArray<float3>(input.halfEdgeCount, Allocator.Temp);
-
-            // Pre-calculate edge midpoint positions for sorting
-            for (var i = 0; i < input.halfEdgeCount; i++)
-            {
-                var he = input.halfEdges[i];
-                var nextHe = input.halfEdges[he.next];
-                var v1Pos = input.vertices[he.vertex].position;
-                var v2Pos = input.vertices[nextHe.vertex].position;
-                edgeMidpoints[i] = (v1Pos + v2Pos) * 0.5f;
-            }
-
+            // Vertices to faces: each original vertex becomes a new face
             for (var vertIdx = 0; vertIdx < input.vertexCount; vertIdx++)
             {
-                vertexEdges.Clear();
-
-                // Scan ALL half-edges to find ones originating from this vertex
-                for (var heIdx = 0; heIdx < input.halfEdgeCount; heIdx++)
+                // Find a half-edge starting from this vertex
+                var startHe = -1;
+                for (var i = 0; i < input.halfEdgeCount; i++)
                 {
-                    if (input.halfEdges[heIdx].vertex == vertIdx)
+                    if (input.halfEdges[i].vertex == vertIdx)
                     {
-                        // Check if we already have this edge (avoid duplicates from twins)
-                        var alreadyHave = false;
-                        for (var i = 0; i < vertexEdges.Length; i++)
-                        {
-                            if (vertexEdges[i] == heIdx)
-                            {
-                                alreadyHave = true;
-                                break;
-                            }
-                        }
-                        if (!alreadyHave)
-                            vertexEdges.Add(heIdx);
+                        startHe = i;
+                        break;
                     }
                 }
 
-                if (vertexEdges.Length < 3)
+                if (startHe == -1)
                     continue;
 
-                // Sort edges by angle around vertex
-                var vertexPos = input.vertices[vertIdx].position;
+                var vertices = new NativeList<int>(Allocator.Temp);
+                var he = startHe;
 
-                // Calculate average normal at vertex
-                var avgNormal = float3.zero;
-                for (var i = 0; i < vertexEdges.Length; i++)
+                // Walk around the vertex via twin->next
+                do
                 {
-                    var he = vertexEdges[i];
-                    if (input.halfEdges[he].face != -1)
-                    {
-                        var face = input.faces[input.halfEdges[he].face];
-                        var he0 = face.halfEdge;
-                        var he1 = input.halfEdges[he0].next;
-                        var he2 = input.halfEdges[he1].next;
+                    vertices.Add(heToVertex[he]);
 
-                        var v0 = input.vertices[input.halfEdges[he0].vertex].position;
-                        var v1 = input.vertices[input.halfEdges[he1].vertex].position;
-                        var v2 = input.vertices[input.halfEdges[he2].vertex].position;
+                    var twin = input.halfEdges[he].twin;
+                    if (twin == -1)
+                        break; // Boundary edge
 
-                        var faceNormal = math.normalize(math.cross(v1 - v0, v2 - v0));
-                        avgNormal += faceNormal;
-                    }
-                }
-                avgNormal = math.normalize(avgNormal);
+                    he = input.halfEdges[twin].next;
 
-                // Sort edges by angle
-                var sortedEdges = new NativeList<int>(vertexEdges.Length, Allocator.Temp);
-                for (var i = 0; i < vertexEdges.Length; i++)
-                    sortedEdges.Add(vertexEdges[i]);
+                    if (vertices.Length >= 100)
+                        break; // Safety limit
+                } while (he != startHe);
 
-                var refDir = math.normalize(edgeMidpoints[sortedEdges[0]] - vertexPos);
-                var tangent = math.normalize(math.cross(avgNormal, refDir));
-
-                for (var i = 0; i < sortedEdges.Length - 1; i++)
+                if (vertices.Length >= 3)
                 {
-                    for (var j = i + 1; j < sortedEdges.Length; j++)
+                    var faceStartHe = result.halfEdgeCount;
+                    var newFaceIdx = result.AddFace(new Face(faceStartHe));
+
+                    // Reverse order for correct winding
+                    for (var i = 0; i < vertices.Length; i++)
                     {
-                        var dir_i = math.normalize(edgeMidpoints[sortedEdges[i]] - vertexPos);
-                        var dir_j = math.normalize(edgeMidpoints[sortedEdges[j]] - vertexPos);
+                        var reversedIdx = vertices.Length - 1 - i;
+                        var newHe = new HalfEdge(
+                            next: faceStartHe + ((i + 1) % vertices.Length),
+                            twin: -1,
+                            vertex: vertices[reversedIdx],
+                            face: newFaceIdx
+                        );
+                        result.AddHalfEdge(newHe);
 
-                        var angle_i = math.atan2(math.dot(tangent, dir_i), math.dot(refDir, dir_i));
-                        var angle_j = math.atan2(math.dot(tangent, dir_j), math.dot(refDir, dir_j));
-
-                        if (angle_i > angle_j)
+                        var v = result.vertices[vertices[reversedIdx]];
+                        if (v.halfEdge == -1)
                         {
-                            var temp = sortedEdges[i];
-                            sortedEdges[i] = sortedEdges[j];
-                            sortedEdges[j] = temp;
+                            v.halfEdge = faceStartHe + i;
+                            result.vertices[vertices[reversedIdx]] = v;
                         }
                     }
                 }
 
-                // Create face from edge midpoints (reverse order for correct winding)
-                var faceStartHe = result.halfEdgeCount;
-                var newFace = new Face(faceStartHe);
-                var newFaceIdx = result.AddFace(newFace);
-
-                // Reverse the edge order for correct outward-facing normals
-                for (var i = 0; i < sortedEdges.Length; i++)
-                {
-                    var reversedIdx = sortedEdges.Length - 1 - i;
-                    var edgeVertexIdx = heToVertex[sortedEdges[reversedIdx]];
-                    var nextIdx = (i + 1) % sortedEdges.Length;
-
-                    var newHe = new HalfEdge(
-                        next: faceStartHe + nextIdx,
-                        twin: -1,
-                        vertex: edgeVertexIdx,
-                        face: newFaceIdx
-                    );
-                    result.AddHalfEdge(newHe);
-                }
-
-                // Update vertex half-edge references
-                for (var i = 0; i < sortedEdges.Length; i++)
-                {
-                    var reversedIdx = sortedEdges.Length - 1 - i;
-                    var edgeVertexIdx = heToVertex[sortedEdges[reversedIdx]];
-                    var v = result.vertices[edgeVertexIdx];
-                    if (v.halfEdge == -1)
-                    {
-                        v.halfEdge = faceStartHe + i;
-                        result.vertices[edgeVertexIdx] = v;
-                    }
-                }
-
-                sortedEdges.Dispose();
+                vertices.Dispose();
             }
 
-            edgeMidpoints.Dispose();
-
             heToVertex.Dispose();
-            vertexEdges.Dispose();
 
             return result;
         }
